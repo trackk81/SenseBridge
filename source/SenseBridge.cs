@@ -90,7 +90,7 @@ public sealed class MainForm:Form {
  GameProfile selected; bool busy,active,exitRequested,loadingProfile,connectedGeneric; string connectedKey,blockedKey; readonly HashSet<string> attached=new HashSet<string>(); DateTime retryAfter; int observedPid=-1,profileRevision,observedRevision=-1;
  public MainForm():this(true){}
  public MainForm(bool promptOnShown){
-  Text="SenseBridge 0.1.1";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+  Text="SenseBridge 0.1.2";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
   ClientSize=new Size(1040,640);MinimumSize=new Size(760,500);FormBorderStyle=FormBorderStyle.Sizable;MaximizeBox=true;
   StartPosition=FormStartPosition.CenterScreen;BackColor=bg;ForeColor=fg;
   Font=new Font("Malgun Gothic",11);AutoScaleMode=AutoScaleMode.Dpi;

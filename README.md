@@ -15,13 +15,13 @@ Windows용 DualSense USB 보조 프로그램입니다. 게임별로 사용할 �
 - 트레이 실행, 설정 초기화, 선택적인 디버그 버튼(기본 꺼짐)
 - 실험적 Bloodborne 연결 소스: 무기별 트리거, 아이템 사용음, 내장 공격 햅틱
 
-현재 main에는 새 카드 UI가 반영되어 있습니다. 아래 0.1.1 ZIP은 이전 UI이며, 새 UI는 소스 빌드에 포함됩니다.
+0.1.2에는 둥근 게임 카드 UI, 카드별 설정 창, Steam 표지 검색 개선이 포함됩니다.
 
-## 다운로드 — 0.1.1
+## 다운로드 — 0.1.2
 
-[Windows x64 실행용 ZIP](https://github.com/trackk81/SenseBridge/releases/tag/v0.1.1)을 내려받아 압축을 풀고 `SenseBridge.exe`를 실행하세요. **배포 ZIP 사용자에게는 아래 빌드 과정, MSYS2, 환경 변수 설정이 필요하지 않습니다.** Windows 10/11 x64와 .NET Framework 4.8을 기준으로 합니다.
+[Windows x64 실행용 ZIP](https://github.com/trackk81/SenseBridge/releases/tag/v0.1.2)을 내려받아 압축을 풀고 `SenseBridge.exe`를 실행하세요. **배포 ZIP 사용자에게는 아래 빌드 과정, MSYS2, 환경 변수 설정이 필요하지 않습니다.** Windows 10/11 x64와 .NET Framework 4.8을 기준으로 합니다.
 
-0.1.1 ZIP에는 공통 엔진과 필요한 런타임 DLL, 외부 라이선스가 포함됩니다. Bloodborne 전용 DLL·연결 프로파일·추출 음원은 포함하지 않습니다. 기존 개발 설치를 자동으로 이전하지 않습니다.
+0.1.2 ZIP에는 공통 엔진과 필요한 런타임 DLL, 외부 라이선스가 포함됩니다. Bloodborne 전용 DLL·연결 프로파일·추출 음원은 포함하지 않습니다. 기존 개발 설치를 자동으로 이전하지 않습니다.
 
 ## 현재 배포 범위
 
