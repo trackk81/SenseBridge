@@ -19,3 +19,6 @@ self-test.txt
 .env
 .env.*
 __pycache__/
+
+/dist/
+/release-artifacts/

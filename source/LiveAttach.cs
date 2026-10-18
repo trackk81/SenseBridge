@@ -36,6 +36,7 @@ static class LiveAttach {
  }
  public static bool IsDebug(Process p){return p.MainModule.FileName.StartsWith(Store.AdapterRoot+"\\",StringComparison.OrdinalIgnoreCase);}
  public static void ValidateExecutable(string path){
+  if(!File.Exists(Path.Combine(Store.Root,"attach-profile.json"))||!File.Exists(Path.Combine(Store.Root,"SenseBridge.Bloodborne.dll")))throw new Exception(L.T("이 배포판에는 블러드본 전용 연결 자료가 없습니다. README의 블러드본 개발 연결 항목을 확인해 주세요."));
   if(!string.Equals(Path.GetFileName(path),"bb-probe.exe",StringComparison.OrdinalIgnoreCase)||!string.Equals(Path.GetFileName(Path.GetDirectoryName(path)),"bin",StringComparison.OrdinalIgnoreCase))throw new Exception(L.T("게임 폴더의 bin\\bb-probe.exe를 선택해 주세요."));
   var profile=Store.Json.Deserialize<System.Collections.Generic.Dictionary<string,object>>(File.ReadAllText(Path.Combine(Store.Root,"attach-profile.json")));
   string root=Path.GetDirectoryName(Path.GetDirectoryName(path));
