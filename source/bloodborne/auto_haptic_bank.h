@@ -14,7 +14,7 @@ static int sb_auto_load(SbAutoBank *b,const char *path){
  int ok=fread(magic,1,8,f)==8&&!memcmp(magic,"SBAUTO01",8)&&fread(&count,4,1,f)==1&&count==SB_AUTO_COUNT&&fread(digest,1,16,f)==16&&!memcmp(digest,sb_auto_digest,16);
  for(unsigned i=0;ok&&i<count;i++){
   SbAutoClip *c=&temp.clips[i];
-  ok=fread(&c->frames,4,1,f)==1&&c->frames>0&&c->frames<=480000&&fread(&c->material,4,1,f)==1&&c->material>=1&&c->material<=8;
+  ok=fread(&c->frames,4,1,f)==1&&c->frames>0&&c->frames<=480000&&fread(&c->material,4,1,f)==1&&c->material>=1&&c->material<=10;
   if(ok){c->pcm=malloc(c->frames*2);ok=c->pcm&&fread(c->pcm,2,c->frames,f)==c->frames;}
   if(ok)for(unsigned n=0;n<c->frames;n++)if(c->pcm[n]>4588||c->pcm[n]<-4588){ok=0;break;}
  }

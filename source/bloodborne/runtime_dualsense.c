@@ -1,4 +1,4 @@
-﻿/* Experimental USB DualSense feedback. Audio is the game's own mixed PCM;
+/* Experimental USB DualSense feedback. Audio is the game's own mixed PCM;
    input/rumble gating is heuristic, never a semantic sound-event classifier. */
 #include "runtime_dualsense.h"
 #include "trigger_gate.h"
@@ -63,7 +63,7 @@ static Uint64 pending_until;
 static int visceral_enabled=1,visceral_mask,visceral_active=-1,visceral_pos;
 static float visceral_gain=3.f;
 static float *visceral_clips[5];static int visceral_frames[5],visceral_loaded;
-static Uint64 last_attack,visceral_tick;
+static Uint64 last_attack,visceral_tick,last_move;
 static SbMaterialPulse material_pulse;
 static SbMaterialPulse footstep_pulse;
 /* Experimental opt-in: sound identity is not proof of local hit ownership. */
@@ -73,9 +73,12 @@ static int auto_haptics=1,auto_attempted,material_asset,footstep_asset;
 static SbAutoBank auto_bank;
 void ds_sound_asset(int asset,int material,unsigned instance){
  pthread_mutex_lock(&ds_lock);Uint64 now=SDL_GetTicks();
+ if(asset>57){const SbAutoClip *clip=sb_auto_clip(&auto_bank,asset);if(!clip||clip->material!=(unsigned)material){pthread_mutex_unlock(&ds_lock);return;}}
  int allowed=enabled&&haptics&&tactile_v2&&device&&!pad_captured&&now-last_pad<300;
- int fired=material>=5?sb_footstep_trigger(&footstep_pulse,material,now,allowed&&footstep_audio):sb_material_trigger(&material_pulse,material,now,last_attack,allowed&&material_audio);
- if(fired){if(material>=5)footstep_asset=asset;else material_asset=asset;}
+ int foot=material==5||material==6;
+ if(asset>57&&foot&&!sb_ai_movement_gate(now,last_move))allowed=0;
+ int fired=foot?sb_footstep_trigger(&footstep_pulse,material,now,allowed&&footstep_audio):sb_material_trigger(&material_pulse,material,now,last_attack,allowed&&material_audio);
+ if(fired){if(foot)footstep_asset=asset;else material_asset=asset;}
  trace_event("material_sound",instance,(unsigned)material,(unsigned)fired,0);
  trace_event("sound_asset",instance,(unsigned)asset,(unsigned)fired,auto_haptics&&auto_bank.loaded);
  pthread_mutex_unlock(&ds_lock);
@@ -247,7 +250,7 @@ void ds_shutdown(void){
  if(device && SDL_GamepadConnected(device))effect(device,0);
  if(device && SDL_GamepadConnected(device))speaker_route(0);
  if(stream){SDL_ClearAudioStream(stream);SDL_DestroyAudioStream(stream);stream=NULL;}
- sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));rumble_until=0;device=NULL;visceral_active=-1;last_attack=0;trigger_gate=(DsTriggerGate){0};pthread_mutex_unlock(&ds_lock);
+ sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));rumble_until=0;device=NULL;visceral_active=-1;last_attack=last_move=0;trigger_gate=(DsTriggerGate){0};pthread_mutex_unlock(&ds_lock);
 }
 void ds_pad(SDL_Gamepad *pad,unsigned buttons,int l2,int capture){
  pthread_mutex_lock(&ds_lock);Uint64 now=SDL_GetTicks();config(now);update_weapon(now);
@@ -255,7 +258,7 @@ void ds_pad(SDL_Gamepad *pad,unsigned buttons,int l2,int capture){
   if(device && SDL_GamepadConnected(device))speaker_route(0);
   if(device && SDL_GamepadConnected(device))effect(device,0);
   if(stream){SDL_DestroyAudioStream(stream);stream=NULL;}
-  sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));rumble_until=0;device=NULL;visceral_active=-1;last_attack=0;last_effect=-1;previous_buttons=0;previous_l2=0;
+  sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));rumble_until=0;device=NULL;visceral_active=-1;last_attack=last_move=0;last_effect=-1;previous_buttons=0;previous_l2=0;
   last_speaker=-1;speaker_until=vial_until=0;speaker_gate=0;active_clip=-1;pending_item=queued_item=-1;
   if(pad && SDL_GetGamepadVendor(pad)==0x054c &&
      (SDL_GetGamepadProduct(pad)==0x0ce6 || SDL_GetGamepadProduct(pad)==0x0df2) && SDL_GetGamepadConnectionState(pad)==SDL_JOYSTICK_CONNECTION_WIRED){
@@ -266,8 +269,9 @@ void ds_pad(SDL_Gamepad *pad,unsigned buttons,int l2,int capture){
  }
  if(!device){pthread_mutex_unlock(&ds_lock);return;}
  int down=l2>35 || (buttons&0x100);
- if(capture || !enabled){visceral_active=-1;last_attack=0;action_until=shot_until=speaker_until=vial_until=rumble_until=0;sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));gate=speaker_gate=0;active_clip=pending_item=queued_item=-1;if(stream)SDL_ClearAudioStream(stream);down=0;}
+ if(capture || !enabled){visceral_active=-1;last_attack=last_move=0;action_until=shot_until=speaker_until=vial_until=rumble_until=0;sb_haptic_reset(&tactile);memset(&rumble_texture,0,sizeof(rumble_texture));gate=speaker_gate=0;active_clip=pending_item=queued_item=-1;if(stream)SDL_ClearAudioStream(stream);down=0;}
  else {
+  if(abs(SDL_GetGamepadAxis(device,SDL_GAMEPAD_AXIS_LEFTX))>7000||abs(SDL_GetGamepadAxis(device,SDL_GAMEPAD_AXIS_LEFTY))>7000)last_move=now;
   unsigned pressed=buttons & ~previous_buttons;
   if(pressed)trace_event("input",pressed,buttons,l2,0);
   if(pressed&(0x800|0x400|0x200)){last_attack=now;}

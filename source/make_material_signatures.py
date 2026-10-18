@@ -29,16 +29,17 @@ rows.sort(key=lambda x:x['hash'])
 lines=['/* Local-only generated sound identity table. Do not distribute game bytes. */',
  '#ifndef SB_MATERIAL_ENCODED_H','#define SB_MATERIAL_ENCODED_H',
  '#include <stdint.h>','#include <stddef.h>','#include <string.h>',
- 'typedef struct { uint32_t hash; int material; unsigned char signature[64]; } SbMaterialSignature;',
+ 'typedef struct { uint32_t hash; int material,asset; unsigned char signature[64]; } SbMaterialSignature;',
  'static const SbMaterialSignature sb_material_signatures[]={']
-for r in rows:lines.append('{%du,%d,{%s}},'%(r['hash'],r['material'],','.join(map(str,bytes.fromhex(r['signature'])))))
+for i,r in enumerate(rows):lines.append('{%du,%d,%d,{%s}},'%(r['hash'],r['material'],i+1,','.join(map(str,bytes.fromhex(r['signature'])))))
 lines+=['};','static int sb_sound_encoded(const unsigned char *p,size_t n){',
  'if(!p||n<64)return 0;uint32_t h=2166136261u;for(unsigned i=0;i<64;i++){h^=p[i];h*=16777619u;}',
  'size_t lo=0,hi=sizeof(sb_material_signatures)/sizeof(sb_material_signatures[0]);',
  'while(lo<hi){size_t mid=lo+(hi-lo)/2;if(sb_material_signatures[mid].hash<h)lo=mid+1;else hi=mid;}',
  'for(;lo<sizeof(sb_material_signatures)/sizeof(sb_material_signatures[0])&&sb_material_signatures[lo].hash==h;lo++)',
- 'if(!memcmp(p,sb_material_signatures[lo].signature,64))return (int)lo+1;',
+ 'if(!memcmp(p,sb_material_signatures[lo].signature,64))return sb_material_signatures[lo].asset;',
  'return 0;}',
+ 'static int sb_sound_material(int id){return id>0&&id<=(int)(sizeof(sb_material_signatures)/sizeof(*sb_material_signatures))?sb_material_signatures[id-1].material:0;}',
  'static inline int sb_material_encoded(const unsigned char *p,size_t n){int id=sb_sound_encoded(p,n);return id?sb_material_signatures[id-1].material:0;}', '#endif']
 (Path(__file__).resolve().parent/'bloodborne/material_encoded.h').write_text('\n'.join(lines),encoding='utf-8')
 (root/'material-sound-catalog.json').write_text(json.dumps(dict(entries=rows,excluded=excluded),indent=2),encoding='utf-8')

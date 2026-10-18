@@ -130,7 +130,7 @@ static ABI int32_t ajm_start(uint32_t id,unsigned char *b,uint32_t n,int priorit
   }
   if(accepted){
    if(events[i].kind>=0)ds_item_decode_probe(events[i].kind,events[i].instance,events[i].source,0);
-   if(events[i].asset>0)ds_sound_asset(events[i].asset,sb_material_signatures[events[i].asset-1].material,events[i].instance);
+   if(events[i].asset>0)ds_sound_asset(events[i].asset,sb_sound_material(events[i].asset),events[i].instance);
    InterlockedIncrement(&item_calls);
   }else InterlockedIncrement(&rejected_results);
  }
@@ -193,8 +193,8 @@ int main(void){
  for(unsigned i=0;i<sizeof(sb_material_signatures)/sizeof(*sb_material_signatures);i++){
   memset(delayed,0,sizeof(delayed));memcpy(delayed+80,sb_material_signatures[i].signature,64);
   int matched=collect(batch,48,events);
-  if(!(matched==1&&events[0].asset==(int)i+1&&events[0].kind==-1&&events[0].offset==80))fprintf(stderr,"asset test row=%u count=%d asset=%d kind=%d offset=%u first=%u\n",i,matched,events[0].asset,events[0].kind,events[0].offset,sb_material_signatures[i].signature[0]);
-  assert(matched==1&&events[0].asset==(int)i+1&&events[0].kind==-1&&events[0].offset==80);
+  if(!(matched==1&&events[0].asset==sb_material_signatures[i].asset&&events[0].kind==-1&&events[0].offset==80))fprintf(stderr,"asset test row=%u count=%d asset=%d kind=%d offset=%u first=%u\n",i,matched,events[0].asset,events[0].kind,events[0].offset,sb_material_signatures[i].signature[0]);
+  assert(matched==1&&events[0].asset==sb_material_signatures[i].asset&&events[0].kind==-1&&events[0].offset==80);
  }
  memset(delayed,0,sizeof(delayed));assert(collect(batch,48,events)==0);
  puts("PASS: item signature, job identity, result pointer, truncated chunks, oversized chunks, unreadable input, short input, unrelated sound");return 0;

@@ -2,6 +2,7 @@
 #define SB_MATERIAL_HAPTIC_H
 #include <stdint.h>
 #include <math.h>
+static inline int sb_ai_movement_gate(uint64_t now,uint64_t moved){return moved&&now>=moved&&now-moved<400;}
 typedef struct { uint64_t start; int material,active; } SbMaterialPulse;
 static int sb_footstep_trigger(SbMaterialPulse *p,int material,uint64_t now,int allowed){
  if(!allowed||(material!=5&&material!=6))return 0;
@@ -16,7 +17,7 @@ static float sb_footstep_wave(int material,unsigned sample){
 }
 static int sb_material_trigger(SbMaterialPulse *p,int material,uint64_t now,
  uint64_t attack,int allowed){
- if(!allowed||material<1||material>4||!attack||now<attack||now-attack>1500)return 0;
+ if(!allowed||((material<1||material>4)&&material!=9&&material!=10)||!attack||now<attack||now-attack>1500)return 0;
  if(p->active&&now>=p->start&&now-p->start<90)return 0;
  p->start=now;p->material=material;p->active=1;return 1;
 }
