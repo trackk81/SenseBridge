@@ -189,7 +189,7 @@ public sealed class MainForm:Form {
   choose.Visible=profileDialog!=null&&selected!=null;
   choose.Text=Configured()?L.T("실행 파일 변경"):L.T("실행 파일 지정");
   profileInfo.Visible=profileDialog!=null&&!Configured();
-  if(profileInfo!=null)profileInfo.Text=selected==null?L.T("게임을 추가해 주세요."):!Configured()?L.T("실행 파일을 지정해 주세요."):L.T("체크한 기능은 자동 저장됩니다.");
+  if(profileInfo!=null)profileInfo.Text=selected==null?L.T("게임을 추가해 주세요."):!Configured()?L.T(Store.Supported(selected)?"게임 폴더의 bin\\bb-probe.exe를 지정해 주세요.":"실행 파일을 지정해 주세요."):L.T("체크한 기능은 자동 저장됩니다.");
  }
  void ChooseExecutable(){
   if(busy||selected==null)return;
