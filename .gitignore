@@ -4,6 +4,8 @@
 /attach-profile.json
 /source/attach_profile.h
 /source/bloodborne/item_encoded.h
+/source/bloodborne/material_encoded.h
+/source/bloodborne/auto_haptic_catalog.h
 /source/live_feedback.generated.c
 *.exe
 *.dll
@@ -22,3 +24,5 @@ __pycache__/
 
 /dist/
 /release-artifacts/
+
+/local-sound-work/

@@ -6,6 +6,13 @@ using System.Runtime.InteropServices;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 namespace SenseBridge {
+static class BuildFeatures {
+#if SENSEBRIDGE_RELEASE
+ public static bool DebugTools {get{return false;}}
+#else
+ public static bool DebugTools {get{return true;}}
+#endif
+}
 public sealed class AppPreferences {
  public string Language {get;set;}
  public bool DebugButton {get;set;}

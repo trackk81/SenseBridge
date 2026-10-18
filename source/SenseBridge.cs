@@ -90,7 +90,7 @@ public sealed class MainForm:Form {
  GameProfile selected; bool busy,active,exitRequested,loadingProfile,connectedGeneric; string connectedKey,blockedKey; readonly HashSet<string> attached=new HashSet<string>(); DateTime retryAfter; int observedPid=-1,profileRevision,observedRevision=-1;
  public MainForm():this(true){}
  public MainForm(bool promptOnShown){
-  Text="SenseBridge 0.1.2";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+  Text="SenseBridge 0.1.3";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
   ClientSize=new Size(1040,640);MinimumSize=new Size(760,500);FormBorderStyle=FormBorderStyle.Sizable;MaximizeBox=true;
   StartPosition=FormStartPosition.CenterScreen;BackColor=bg;ForeColor=fg;
   Font=new Font("Malgun Gothic",11);AutoScaleMode=AutoScaleMode.Dpi;
@@ -185,7 +185,7 @@ public sealed class MainForm:Form {
  bool Configured(){return Configured(selected);}
  void UpdateLayout(){
   bool configured=profileDialog!=null&&Configured(),bb=Store.Supported(selected);triggers.Visible=haptics.Visible=configured;use.Visible=true;
-  audio.Visible=speakerDetails.Visible=configured&&bb;debug.Visible=configured&&bb&&AppPreferences.Current.DebugButton;hapticDetails.Visible=configured;
+  audio.Visible=speakerDetails.Visible=configured&&bb;debug.Visible=BuildFeatures.DebugTools&&configured&&bb&&AppPreferences.Current.DebugButton;hapticDetails.Visible=configured;
   choose.Visible=profileDialog!=null&&selected!=null;
   choose.Text=Configured()?L.T("실행 파일 변경"):L.T("실행 파일 지정");
   profileInfo.Visible=profileDialog!=null&&!Configured();
@@ -267,6 +267,7 @@ public sealed class MainForm:Form {
    Store.WriteIni(Store.Config,d);Store.Atomic(Path.Combine(Store.Root,@"profiles\bloodborne-settings.json"),Store.Json.Serialize(d));
  }
  void LaunchDebug(){
+  if(!BuildFeatures.DebugTools)return;
   if(busy||!Store.Supported(selected))return;
   try{
    using(var game=LiveAttach.Find(selected)){if(game!=null){MessageBox.Show(this,L.T("현재 게임을 정상 종료한 뒤 디버그 실행을 눌러 주세요."),"SenseBridge",MessageBoxButtons.OK,MessageBoxIcon.Information);return;}}

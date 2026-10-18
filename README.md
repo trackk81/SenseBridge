@@ -12,16 +12,18 @@ Windows용 DualSense USB 보조 프로그램입니다. 게임별로 사용할 �
 - 전면 게임에만 적용; 다른 앱으로 이동하면 효과 중지
 - 공통 엔진: 출력 장치의 오디오를 이용한 햅틱, L2/R2 저항 설정
 - 한국어 / English / 日本語 및 Windows 언어 자동 감지
-- 트레이 실행, 설정 초기화, 선택적인 디버그 버튼(기본 꺼짐)
+- 트레이 실행, 설정 초기화, 배포판에서 디버그 UI 숨김
 - 실험적 Bloodborne 연결 소스: 무기별 트리거, 아이템 사용음, 내장 공격 햅틱
 
-0.1.2에는 둥근 게임 카드 UI, 카드별 설정 창, Steam 표지 검색 개선이 포함됩니다.
+0.1.3은 Bloodborne의 개별 효과음에 맞춰 만든 자동 햅틱을 추가합니다. 충돌음·발소리 50개와 혈약·혈탄·내장 공격 7개의 파형을 포함하며, 개별 이벤트 옵션 없이 오디오 햅틱 체크 하나로 사용합니다. 상세 설정에는 전체 강도와 스피커 볼륨만 남습니다.
 
-## 다운로드 — 0.1.2
+지원 목록의 정확한 압축 효과음 식별값과 실제 디코딩 결과를 확인해 재생합니다. 모든 소리를 AI로 분류하는 기능은 아니며, 같은 소리를 쓰는 주변 캐릭터의 발소리에도 반응할 수 있습니다. 물리적인 충돌 재질을 직접 판독하는 기능은 아닙니다. 일반 게임용 공통 엔진의 동작은 기존과 같습니다.
 
-[Windows x64 실행용 ZIP](https://github.com/trackk81/SenseBridge/releases/tag/v0.1.2)을 내려받아 압축을 풀고 `SenseBridge.exe`를 실행하세요. **배포 ZIP 사용자에게는 아래 빌드 과정, MSYS2, 환경 변수 설정이 필요하지 않습니다.** Windows 10/11 x64와 .NET Framework 4.8을 기준으로 합니다.
+## 다운로드 — 0.1.3
 
-0.1.2 ZIP에는 공통 엔진과 필요한 런타임 DLL, 외부 라이선스가 포함됩니다. 갱신된 ZIP에는 Bloodborne 전용 DLL·연결 프로파일·효과음이 포함됩니다. 게임 폴더의 `bin\bb-probe.exe`를 지정하세요. 검증된 실행 파일과 boot-linked.bin의 해시가 일치하는 버전만 연결됩니다. 게임 본체와 세이브는 포함하지 않습니다.
+[Windows x64 실행용 ZIP](https://github.com/trackk81/SenseBridge/releases/tag/v0.1.3)을 내려받아 압축을 풀고 `SenseBridge.exe`를 실행하세요. **배포 ZIP 사용자에게는 아래 빌드 과정, MSYS2, 환경 변수 설정이 필요하지 않습니다.** Windows 10/11 x64와 .NET Framework 4.8을 기준으로 합니다.
+
+0.1.3 ZIP에는 공통 엔진과 필요한 런타임 DLL, 외부 라이선스가 포함됩니다. 갱신된 ZIP에는 Bloodborne 전용 DLL·연결 프로파일·효과음이 포함됩니다. 게임 폴더의 `bin\bb-probe.exe`를 지정하세요. 검증된 실행 파일과 boot-linked.bin의 해시가 일치하는 버전만 연결됩니다. 게임 본체와 세이브는 포함하지 않습니다.
 
 ## 현재 배포 범위
 
@@ -80,7 +82,7 @@ python source/build_attach.py
 
 생성되는 `attach-profile.json`, `source/attach_profile.h`, `source/bloodborne/item_encoded.h`는 로컬 전용이며 Git에서 제외됩니다. 연결 프로파일 생성은 실행 파일 호환성 검증을 대신하지 않습니다. 메모리 구조/무기 판독 위치 역시 버전별 검증이 필요합니다.
 
-어댑터 설정 및 음원은 실행 파일 옆 `Bloodborne/runtime` 아래에 둡니다. 음원 경로는 `source/bloodborne/runtime_dualsense.c`에 정의되어 있습니다. 디버그 실행을 쓰려면 별도로 `Bloodborne/tools/start.ps1`을 준비해야 합니다. 디버그 게임과 세이브는 제공하지 않습니다.
+어댑터 설정 및 음원은 실행 파일 옆 `Bloodborne/runtime` 아래에 둡니다. 음원 경로는 `source/bloodborne/runtime_dualsense.c`에 정의되어 있습니다. 배포판에서는 이전 설정에 디버그 표시가 켜져 있어도 버튼과 설정 항목이 숨겨집니다. 개발자가 `build.ps1 -Development`로 빌드하여 디버그 실행을 쓰려면 별도로 `Bloodborne/tools/start.ps1`을 준비해야 합니다. 디버그 게임과 세이브는 제공하지 않습니다.
 
 ## 검증과 제한
 
@@ -100,3 +102,19 @@ python source/build_attach.py
 ## 권리 및 외부 구성요소
 
 게임 및 컨트롤러 명칭은 각 권리자의 상표입니다. Sony, FromSoftware, Valve와 제휴한 프로젝트가 아닙니다. SDL3/MSYS2 등 외부 의존성에는 각 프로젝트의 라이선스가 적용됩니다. 이 첫 공개판에는 별도의 오픈소스 라이선스를 지정하지 않았습니다.
+
+## 자동 햅틱 개발 자료
+
+생성된 `material_encoded.h`, `auto_haptic_catalog.h`, 음원·캐시는 Git에서 제외됩니다. 로컬 게임 자료로 아래 순서로 생성합니다. `vgmstream-cli`는 별도로 준비합니다.
+
+```powershell
+$env:SB_SOUND_BANKS = 'D:\Game\CUSA03173\dvdroot_ps4\sound'
+python source/index_sound_assets.py
+python source/make_material_signatures.py
+python source/build_auto_haptics.py --catalog local-sound-work/material-sound-catalog.json --banks $env:SB_SOUND_BANKS --effects Bloodborne/runtime/effects --vgmstream D:\tools\vgmstream-cli.exe --runtime Bloodborne/runtime
+python source/build_attach.py
+```
+
+카탈로그는 검증된 50개 식별값 구성을 요구하며, 다른 게임 버전에는 재검증이 필요합니다. 패키지에는 생성된 캐시가 포함되므로 사용자가 생성 작업을 할 필요는 없습니다.
+
+0.1.3 검증: 시험용 게임의 패드 체감은 사용자 확인 완료. 배포용 DLL은 별도 어댑터이므로 효과음 파서·57개 캐시·출력 제한·UI 자체 검사를 수행했습니다. 배포 DLL에서 전체 게임 장면을 다시 수동 검증하지는 않았습니다.

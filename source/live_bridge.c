@@ -7,6 +7,7 @@
 #include <SDL3/SDL.h>
 #include "runtime_dualsense.h"
 #include "item_encoded.h"
+#include "material_encoded.h"
 #include "attach_profile.h"
 #define ABI __attribute__((sysv_abi))
 extern void ds_weapon_set_image(void*,unsigned long long);
@@ -83,12 +84,14 @@ static ABI int32_t audio_outputs(const Output *p,uint32_t n){
 }
 typedef struct {uint32_t word,size;} Chunk;
 typedef struct {uint32_t word,size;void *address;} Buffer;
-typedef struct {int kind;unsigned instance;const void *source,*result;uint64_t flags;uint32_t offset;} Event;
-static int find_sound(const void *input,uint32_t size,uint32_t *offset){
+typedef struct {int kind,asset;unsigned instance;const void *source,*result;uint64_t flags;uint32_t offset;} Event;
+static int find_sound(const void *input,uint32_t size,uint32_t *offset,int *asset){
  if(size<64||size>4*1024*1024)return -1;
  unsigned char *bytes=malloc(size);if(!bytes)return -1;
  int kind=-1;if(read_mem(input,bytes,size))for(uint32_t i=0;i<=size-64;i++){
-  if(bytes[i]!=37)continue;kind=item_encoded_id(bytes+i,size-i);if(kind>=0){*offset=i;break;}
+  if(bytes[i]!=37&&bytes[i]!=33)continue;
+  kind=item_encoded_id(bytes+i,size-i);*asset=sb_sound_encoded(bytes+i,size-i);
+  if(kind>=0||*asset){*offset=i;break;}
  }
  free(bytes);return kind;
 }
@@ -104,10 +107,10 @@ static int collect(const unsigned char *buffer,uint32_t size,Event events[16]){
     if(tag==3||tag==4){if(tag==4){run=1;e.flags=((uint64_t)((s.word>>6)&0xfffff)<<32)|s.size;}at+=8;continue;}
     if(tag!=1&&tag!=2&&tag!=6&&tag!=17&&tag!=18)return 0;
     Buffer b;if(end-at<16||!read_mem(buffer+at,&b,16))return 0;at+=16;
-    if(tag==1){inputs++;e.kind=find_sound(b.address,b.size,&e.offset);e.source=b.address;if(e.kind>=0)InterlockedIncrement(&signature_matches);}
+    if(tag==1){inputs++;e.kind=find_sound(b.address,b.size,&e.offset,&e.asset);e.source=b.address;if(e.kind>=0||e.asset)InterlockedIncrement(&signature_matches);}
     if(tag==18&&b.size>=8)e.result=b.address;
    }
-   if(run&&inputs==1&&e.kind>=0){if(e.result&&count<16)events[count++]=e;else InterlockedIncrement(&missing_results);}
+   if(run&&inputs==1&&(e.kind>=0||e.asset)){if(e.result&&count<16)events[count++]=e;else InterlockedIncrement(&missing_results);}
   }else at=end;
  }
  return count;
@@ -125,7 +128,11 @@ static ABI int32_t ajm_start(uint32_t id,unsigned char *b,uint32_t n,int priorit
     if(read_mem(events[i].result,result,16)&&!(result[0]&~0x18)&&result[2]>(int)events[i].offset&&result[3]>0)accepted=1;
    }else if(result[0]==0&&events[i].offset==0)accepted=1;
   }
-  if(accepted){ds_item_decode_probe(events[i].kind,events[i].instance,events[i].source,0);InterlockedIncrement(&item_calls);}else InterlockedIncrement(&rejected_results);
+  if(accepted){
+   if(events[i].kind>=0)ds_item_decode_probe(events[i].kind,events[i].instance,events[i].source,0);
+   if(events[i].asset>0)ds_sound_asset(events[i].asset,sb_material_signatures[events[i].asset-1].material,events[i].instance);
+   InterlockedIncrement(&item_calls);
+  }else InterlockedIncrement(&rejected_results);
  }
  return r;
 }
@@ -182,6 +189,14 @@ int main(void){
  in.size=64;memcpy(batch+8,&in,16);input[0]^=1;assert(collect(batch,48,events)==0);input[0]^=1;
  unsigned char delayed[160]={0};memcpy(delayed+80,input,64);in.address=delayed;in.size=160;memcpy(batch+8,&in,16);
  assert(collect(batch,48,events)==1&&events[0].offset==80);
+ /* Each allowed impact/footstep identity must survive the public adapter parser. */
+ for(unsigned i=0;i<sizeof(sb_material_signatures)/sizeof(*sb_material_signatures);i++){
+  memset(delayed,0,sizeof(delayed));memcpy(delayed+80,sb_material_signatures[i].signature,64);
+  int matched=collect(batch,48,events);
+  if(!(matched==1&&events[0].asset==(int)i+1&&events[0].kind==-1&&events[0].offset==80))fprintf(stderr,"asset test row=%u count=%d asset=%d kind=%d offset=%u first=%u\n",i,matched,events[0].asset,events[0].kind,events[0].offset,sb_material_signatures[i].signature[0]);
+  assert(matched==1&&events[0].asset==(int)i+1&&events[0].kind==-1&&events[0].offset==80);
+ }
+ memset(delayed,0,sizeof(delayed));assert(collect(batch,48,events)==0);
  puts("PASS: item signature, job identity, result pointer, truncated chunks, oversized chunks, unreadable input, short input, unrelated sound");return 0;
 }
 #endif
