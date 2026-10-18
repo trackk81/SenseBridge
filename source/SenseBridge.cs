@@ -85,33 +85,34 @@ public class TriggerDiagram:Control {
 }
 public sealed class MainForm:Form {
  readonly Color bg=Color.FromArgb(15,18,27),fg=Color.FromArgb(235,238,249);
- ListBox library; CheckBox triggers,haptics,audio; Button use,debug,choose,quit,hapticDetails,speakerDetails,add,steamAdd,settings; NotifyIcon tray; Label status,profileInfo;
+ GameGallery library; Form profileDialog; CheckBox triggers,haptics,audio; Button use,debug,choose,quit,hapticDetails,speakerDetails,add,steamAdd,settings; NotifyIcon tray; Label status,profileInfo;
  readonly System.Windows.Forms.Timer watch=new System.Windows.Forms.Timer{Interval=100};
  GameProfile selected; bool busy,active,exitRequested,loadingProfile,connectedGeneric; string connectedKey,blockedKey; readonly HashSet<string> attached=new HashSet<string>(); DateTime retryAfter; int observedPid=-1,profileRevision,observedRevision=-1;
  public MainForm():this(true){}
  public MainForm(bool promptOnShown){
   Text="SenseBridge 0.1.1";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-  ClientSize=new Size(620,410);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
+  ClientSize=new Size(1040,640);MinimumSize=new Size(760,500);FormBorderStyle=FormBorderStyle.Sizable;MaximizeBox=true;
   StartPosition=FormStartPosition.CenterScreen;BackColor=bg;ForeColor=fg;
   Font=new Font("Malgun Gothic",11);AutoScaleMode=AutoScaleMode.Dpi;
-  library=new ListBox{Bounds=new Rectangle(20,24,210,210),BackColor=Color.FromArgb(24,28,40),ForeColor=fg,BorderStyle=BorderStyle.FixedSingle,DrawMode=DrawMode.OwnerDrawFixed,ItemHeight=54,IntegralHeight=false};
-  library.DrawItem+=DrawGame;
+  library=new GameGallery{Bounds=new Rectangle(16,70,1008,480),Anchor=AnchorStyles.Top|AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right};
+  library.ItemActivated+=delegate{ShowGameOptions();};
   Controls.Add(library);library.SelectedIndexChanged+=delegate{SelectGame();};
-  add=new Button{Text=L.T("+ 게임 추가"),Bounds=new Rectangle(20,242,210,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};add.Click+=delegate{AddGame();};Controls.Add(add);
-  steamAdd=new Button{Text=L.T("Steam 게임 목록 추가"),Bounds=new Rectangle(20,282,210,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};steamAdd.Click+=delegate{ImportSteamGames();};Controls.Add(steamAdd);
-  settings=new Button{Text="⚙",AccessibleName=L.T("프로그램 설정"),Bounds=new Rectangle(562,3,32,30),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Segoe UI Symbol",16),Cursor=Cursors.Hand};settings.FlatAppearance.BorderSize=0;settings.Click+=delegate{OpenSettings();};Controls.Add(settings);
+  add=new RoundedButton{Text=L.T("+ 게임 추가"),Bounds=new Rectangle(530,20,160,34),Anchor=AnchorStyles.Top|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};add.Click+=delegate{AddGame();};Controls.Add(add);
+  steamAdd=new RoundedButton{Text=L.T("Steam 게임 목록 추가"),Bounds=new Rectangle(704,20,250,34),Anchor=AnchorStyles.Top|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};steamAdd.Click+=delegate{ImportSteamGames();};Controls.Add(steamAdd);
+  settings=new RoundedButton{Text="⚙",AccessibleName=L.T("프로그램 설정"),Bounds=new Rectangle(974,18,42,38),Anchor=AnchorStyles.Top|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Segoe UI Symbol",16),Cursor=Cursors.Hand};settings.FlatAppearance.BorderSize=0;settings.Click+=delegate{OpenSettings();};Controls.Add(settings);
+  Controls.Add(new Label{Text="SENSEBRIDGE",Bounds=new Rectangle(24,22,280,36),ForeColor=fg,Font=new Font("Segoe UI",18,FontStyle.Bold)});
   triggers=Option(L.T("어댑티브 트리거"),260,38);
   haptics=Option(L.T("오디오 햅틱"),260,91);
   audio=Option(L.T("스피커 사용"),260,144);
   haptics.Width=200;audio.Width=200;
   hapticDetails=DetailsButton(94,false);speakerDetails=DetailsButton(147,true);
-  use=new Button{Text=L.T("자동 적용 시작"),Bounds=new Rectangle(20,326,390,42),FlatStyle=FlatStyle.Flat,BackColor=Color.FromArgb(116,96,221),ForeColor=fg,Cursor=Cursors.Hand};
+  use=new RoundedButton{Text=L.T("자동 적용 시작"),Bounds=new Rectangle(20,576,780,42),Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,BackColor=Color.FromArgb(116,96,221),ForeColor=fg,Cursor=Cursors.Hand};
   use.FlatAppearance.BorderSize=0;use.Click+=delegate{UseGame();};Controls.Add(use);
-  debug=new Button{Text=L.T("디버그 실행"),Bounds=new Rectangle(480,282,114,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9),Cursor=Cursors.Hand};
+  debug=new RoundedButton{Text=L.T("디버그 실행"),Bounds=new Rectangle(480,282,114,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9),Cursor=Cursors.Hand};
   debug.Click+=delegate{LaunchDebug();};Controls.Add(debug);
-  quit=new Button{Text=L.T("종료하기"),Bounds=new Rectangle(426,326,168,42),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg};quit.Click+=delegate{ExitApp();};Controls.Add(quit);
-  choose=new Button{Text=L.T("실행 파일 지정"),Bounds=new Rectangle(260,282,138,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};choose.Click+=delegate{ChooseExecutable();};Controls.Add(choose);
-  status=new Label{Visible=false,Text="",Bounds=new Rectangle(20,374,574,28),Font=new Font("Malgun Gothic",9),ForeColor=fg,AutoEllipsis=true};Controls.Add(status);
+  quit=new RoundedButton{Text=L.T("종료하기"),Bounds=new Rectangle(820,576,200,42),Anchor=AnchorStyles.Bottom|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg};quit.Click+=delegate{ExitApp();};Controls.Add(quit);
+  choose=new RoundedButton{Text=L.T("실행 파일 지정"),Bounds=new Rectangle(260,282,138,28),FlatStyle=FlatStyle.Flat,BackColor=bg,ForeColor=fg,Font=new Font("Malgun Gothic",9)};choose.Click+=delegate{ChooseExecutable();};Controls.Add(choose);
+  status=new Label{Visible=false,Text="",Bounds=new Rectangle(20,550,1000,24),Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Font=new Font("Malgun Gothic",9),ForeColor=fg,AutoEllipsis=true};Controls.Add(status);
   profileInfo=new Label{Bounds=new Rectangle(260,208,334,58),Font=new Font("Malgun Gothic",9),ForeColor=fg};Controls.Add(profileInfo);
   triggers.CheckedChanged+=delegate{SaveProfileOptions();};haptics.CheckedChanged+=delegate{SaveProfileOptions();};audio.CheckedChanged+=delegate{SaveProfileOptions();};
   status.Text=L.T("자동 적용 꺼짐");
@@ -131,13 +132,18 @@ public sealed class MainForm:Form {
   if(library.Items.Count>0)library.SelectedIndex=0;else{use.Enabled=false;UpdateLayout();}
  }
  CheckBox Option(string label,int x,int y){var c=new CheckBox{Text=label,Bounds=new Rectangle(x,y,334,34),ForeColor=fg};Controls.Add(c);return c;}
- Button DetailsButton(int y,bool speaker){var b=new Button{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,y,114,28),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Malgun Gothic",9)};b.Click+=delegate{using(Form f=Store.Supported(selected)?(Form)new AudioDetailsForm(speaker):new GenericForm(GlobalConfig(selected))){f.ShowDialog(this);}};Controls.Add(b);return b;}
- void DrawGame(object sender,DrawItemEventArgs e){
-  if(e.Index<0)return;var p=(GameProfile)library.Items[e.Index];bool picked=(e.State&DrawItemState.Selected)!=0;
-  using(var b=new SolidBrush(picked?Color.FromArgb(64,57,113):Color.FromArgb(24,28,40)))e.Graphics.FillRectangle(b,e.Bounds);
-  float scale=e.Graphics.DpiY/96f;int pad=(int)(8*scale),line=(int)(25*scale);
-  TextRenderer.DrawText(e.Graphics,p.Name,Font,new Rectangle(e.Bounds.X+pad,e.Bounds.Y+pad/2,e.Bounds.Width-pad*2,line),Color.White,TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
-  using(var font=new Font(Font.FontFamily,9))TextRenderer.DrawText(e.Graphics,L.T(Store.Supported(p)?L.T("듀얼센스 지원"):L.T("글로벌 적용")),font,new Rectangle(e.Bounds.X+pad,e.Bounds.Y+line,e.Bounds.Width-pad*2,line),picked?Color.FromArgb(180,235,228):Color.FromArgb(185,193,212),TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
+ Button DetailsButton(int y,bool speaker){var b=new RoundedButton{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,y,114,28),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Malgun Gothic",9)};b.Click+=delegate{using(Form f=Store.Supported(selected)?(Form)new AudioDetailsForm(speaker):new GenericForm(GlobalConfig(selected))){f.ShowDialog(profileDialog??this);}};Controls.Add(b);return b;}
+ void ShowGameOptions(){
+  if(selected==null||profileDialog!=null)return;
+  var controls=new Control[]{triggers,haptics,audio,hapticDetails,speakerDetails,choose,debug,profileInfo};
+  using(var f=new Form{Text=selected.Name,ClientSize=new Size(500,320),BackColor=bg,ForeColor=fg,Font=Font,StartPosition=FormStartPosition.CenterParent,FormBorderStyle=FormBorderStyle.FixedDialog,MaximizeBox=false,MinimizeBox=false,AutoScaleMode=AutoScaleMode.None,Icon=Icon}){
+   profileDialog=f;float scale;using(var g=CreateGraphics())scale=g.DpiX/96f;
+   f.ClientSize=new Size((int)(500*scale),(int)(320*scale));
+   Rectangle[] bounds={new Rectangle(24,26,300,36),new Rectangle(24,82,300,36),new Rectangle(24,138,300,36),new Rectangle(350,84,126,32),new Rectangle(350,140,126,32),new Rectangle(24,212,210,34),new Rectangle(280,212,196,34),new Rectangle(24,180,452,28)};
+   for(int i=0;i<controls.Length;i++){f.Controls.Add(controls[i]);var r=bounds[i];controls[i].Bounds=new Rectangle((int)(r.X*scale),(int)(r.Y*scale),(int)(r.Width*scale),(int)(r.Height*scale));}
+   var close=new RoundedButton{Text=L.T("닫기"),BackColor=bg,ForeColor=fg,FlatStyle=FlatStyle.Flat,Bounds=new Rectangle((int)(350*scale),(int)(270*scale),(int)(126*scale),(int)(32*scale)),DialogResult=DialogResult.OK};f.Controls.Add(close);f.CancelButton=close;
+   UpdateLayout();try{f.ShowDialog(this);}finally{profileDialog=null;foreach(var c in controls){c.Visible=false;Controls.Add(c);}UpdateLayout();}
+  }
  }
  void ImportSteamGames(){
   if(busy)return;
@@ -171,17 +177,18 @@ public sealed class MainForm:Form {
  }
  void SaveProfileOptions(){
   if(loadingProfile||selected==null)return;
-  selected.UseTriggers=triggers.Checked;selected.UseHaptics=haptics.Checked;selected.UseSpeaker=Store.Supported(selected)&&audio.Checked;
+  selected.UseTriggers=triggers.Checked;selected.UseHaptics=haptics.Checked;selected.UseSpeaker=Store.Supported(selected)&&audio.Checked;library.RefreshCards();
   try{Store.SaveGames(library.Items.Cast<GameProfile>().ToList());profileRevision++;if(active)CheckGame();}catch(Exception ex){Error(ex);}
  }
  static string GlobalConfig(GameProfile p){return Path.Combine(Store.Root,@"profiles\global-"+string.Concat(p.Id.Where(char.IsLetterOrDigit))+".ini");}
  static bool Configured(GameProfile p){return p!=null&&(SteamLibrary.Ready(p)||!string.IsNullOrEmpty(p.EngineExecutable)&&File.Exists(p.EngineExecutable));}
  bool Configured(){return Configured(selected);}
  void UpdateLayout(){
-  bool configured=Configured(),bb=Store.Supported(selected);triggers.Visible=haptics.Visible=configured;use.Visible=true;
+  bool configured=profileDialog!=null&&Configured(),bb=Store.Supported(selected);triggers.Visible=haptics.Visible=configured;use.Visible=true;
   audio.Visible=speakerDetails.Visible=configured&&bb;debug.Visible=configured&&bb&&AppPreferences.Current.DebugButton;hapticDetails.Visible=configured;
-  choose.Visible=selected!=null;
+  choose.Visible=profileDialog!=null&&selected!=null;
   choose.Text=Configured()?L.T("실행 파일 변경"):L.T("실행 파일 지정");
+  profileInfo.Visible=profileDialog!=null&&!Configured();
   if(profileInfo!=null)profileInfo.Text=selected==null?L.T("게임을 추가해 주세요."):!Configured()?L.T("실행 파일을 지정해 주세요."):L.T("체크한 기능은 자동 저장됩니다.");
  }
  void ChooseExecutable(){
@@ -190,7 +197,7 @@ public sealed class MainForm:Form {
    string previous=selected.EngineExecutable;
    string initial=SteamLibrary.Ready(selected)?selected.InstallDirectory:!string.IsNullOrEmpty(previous)?Path.GetDirectoryName(previous):(!string.IsNullOrEmpty(selected.Executable)?Path.Combine(Path.GetDirectoryName(selected.Executable),"bin"):null);
    if(Directory.Exists(initial))dialog.InitialDirectory=initial;
-   if(dialog.ShowDialog(this)!=DialogResult.OK)return;
+   if(dialog.ShowDialog(profileDialog??this)!=DialogResult.OK)return;
    try{if(Store.Supported(selected))LiveAttach.ValidateExecutable(dialog.FileName);selected.EngineExecutable=Path.GetFullPath(dialog.FileName);Store.SaveGames(library.Items.Cast<GameProfile>().ToList());profileRevision++;UpdateLayout();}
    catch(Exception ex){selected.EngineExecutable=previous;Error(ex);}
   }
@@ -207,7 +214,7 @@ public sealed class MainForm:Form {
      Store.ResetSettings(Store.Root,Store.Config);
      AppPreferences.Current=new AppPreferences();L.Change();selected=null;library.Items.Clear();loadingProfile=true;triggers.Checked=haptics.Checked=audio.Checked=false;loadingProfile=false;attached.Clear();
      use.Text=L.T("자동 적용 시작");status.Text=L.T("자동 적용 꺼짐");foreach(var game in Store.LoadGames())library.Items.Add(game);if(library.Items.Count>0)library.SelectedIndex=0;UpdateLayout();
-    }else{AppPreferences.Current.Language=dialog.LanguageChoice;AppPreferences.Current.DebugButton=dialog.DebugChoice;AppPreferences.Current.Save();L.Change();debug.Visible=Configured()&&Store.Supported(selected)&&AppPreferences.Current.DebugButton;}
+    }else{AppPreferences.Current.Language=dialog.LanguageChoice;AppPreferences.Current.DebugButton=dialog.DebugChoice;AppPreferences.Current.Save();L.Change();UpdateLayout();}
     L.Refresh(this);settings.AccessibleName=L.T("프로그램 설정");library.Invalidate();
     tray.ContextMenuStrip.Items[0].Text=L.T("열기");tray.ContextMenuStrip.Items[1].Text=L.T("종료");
    }catch(Exception ex){Error(ex);}
