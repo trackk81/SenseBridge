@@ -85,6 +85,7 @@ public class TriggerDiagram:Control {
 }
 public sealed class MainForm:Form {
  readonly Color bg=Color.FromArgb(15,18,27),fg=Color.FromArgb(235,238,249);
+ Button updateButton; UpdateManifest availableUpdate; bool checkingUpdate; readonly System.Windows.Forms.Timer updateTimer=new System.Windows.Forms.Timer{Interval=21600000};
  GameGallery library; Form profileDialog; CheckBox triggers,haptics,audio; Button use,debug,choose,quit,hapticDetails,speakerDetails,add,settings; NavigationBar navigation; Label brand; ToolTip navTips=new ToolTip(); NotifyIcon tray; Label status,profileInfo;
  readonly System.Windows.Forms.Timer watch=new System.Windows.Forms.Timer{Interval=100};
  GameProfile selected; bool busy,active,exitRequested,loadingProfile,connectedGeneric; string connectedKey,blockedKey; readonly HashSet<string> attached=new HashSet<string>(); DateTime retryAfter; int observedPid=-1,profileRevision,observedRevision=-1;
@@ -122,9 +123,10 @@ public sealed class MainForm:Form {
    exitRequested=true;active=false;watch.Stop();
    try{StopEffects();}catch(Exception ex){e.Cancel=true;exitRequested=false;Error(ex);return;}
    if(busy){e.Cancel=true;status.Text=L.T("연결 작업 종료 중");return;}
-   watch.Dispose();navTips.Dispose();tray.Visible=false;tray.Dispose();
+   watch.Dispose();updateTimer.Stop();updateTimer.Dispose();navTips.Dispose();tray.Visible=false;tray.Dispose();
   };
-  BuildNavigation();Resize+=delegate{LayoutNavigation();};Shown+=delegate{LayoutNavigation();};
+  BuildNavigation();Resize+=delegate{LayoutNavigation();};Shown+=delegate{LayoutNavigation();CheckUpdates();updateTimer.Start();};
+  updateTimer.Tick+=delegate{CheckUpdates();};
   watch.Tick+=delegate{CheckGame();};
   var startupGames=Store.LoadGames();SteamLibrary.Import(startupGames);Store.SaveGames(startupGames);foreach(var game in startupGames)library.Items.Add(game);
   if(library.Items.Count>0)library.SelectedIndex=0;else{use.Enabled=false;UpdateLayout();}
@@ -137,15 +139,32 @@ public sealed class MainForm:Form {
   var data=NavButton(L.T("데이터 ▾"),104);data.Click+=delegate{var menu=NavMenu();var export=menu.Items.Add(L.T("데이터 내보내기"),null,delegate{ExportPreset();});export.Enabled=selected!=null;menu.Items.Add(L.T("데이터 불러오기"),null,delegate{ImportPreset();});menu.Show(data,new Point(0,data.Height+8));};
   var guide=NavButton("?",44);guide.Font=new Font("Segoe UI",16);guide.AccessibleName=L.T("프리셋 제작 매뉴얼");navTips.SetToolTip(guide,L.T("프리셋 제작 매뉴얼"));guide.Click+=delegate{try{string path=Path.Combine(Store.Root,"PRESET-GUIDE.ko.html");if(!File.Exists(path))throw new FileNotFoundException(L.T("매뉴얼 파일이 없습니다."));Process.Start(new ProcessStartInfo(path){UseShellExecute=true});}catch(Exception ex){Error(ex);}};
   settings=NavButton("⚙",44);settings.Font=new Font("Segoe UI Symbol",16);settings.AccessibleName=L.T("프로그램 설정");navTips.SetToolTip(settings,L.T("프로그램 설정"));settings.Click+=delegate{OpenSettings();};
+  updateButton=NavButton(L.T("업데이트"),90);updateButton.Enabled=false;updateButton.Click+=delegate{InstallUpdate();};navTips.SetToolTip(updateButton,L.T("업데이트 확인 중"));
   navigation.Controls.Add(use);use.Anchor=AnchorStyles.Top|AnchorStyles.Left;use.Size=new Size(170,40);use.Font=new Font("Malgun Gothic",9,FontStyle.Bold);
   navigation.Controls.Add(quit);quit.Anchor=AnchorStyles.Top|AnchorStyles.Left;quit.Size=new Size(80,40);quit.Font=new Font("Malgun Gothic",9);((RoundedButton)quit).NavigationStyle=true;quit.ForeColor=Color.FromArgb(218,164,174);
   navigation.BringToFront();LayoutNavigation();
+ }
+ async void CheckUpdates(){
+  if(checkingUpdate||busy||exitRequested||IsDisposed)return;checkingUpdate=true;
+  try{var result=await AppUpdates.Check();if(IsDisposed||exitRequested)return;availableUpdate=result;updateButton.Enabled=result!=null;navTips.SetToolTip(updateButton,result==null?L.T("최신 버전입니다."):L.T("새 버전: ")+result.Version);}
+  catch(Exception){if(!IsDisposed&&!exitRequested){updateButton.Enabled=false;navTips.SetToolTip(updateButton,L.T("업데이트 확인 실패 · 나중에 다시 확인합니다."));}}
+  finally{checkingUpdate=false;}
+ }
+ async void InstallUpdate(){
+  if(busy||availableUpdate==null)return;
+  busy=true;watch.Stop();updateButton.Enabled=false;updateButton.Text=L.T("다운로드 중…");
+  try{
+   string prepared=await AppUpdates.Prepare(availableUpdate);if(exitRequested)return;
+   StopEffects();active=false;use.Text=L.T("자동 적용 시작");
+   AppUpdates.Launch(prepared);exitRequested=true;
+  }catch(Exception ex){Error(ex);}
+  finally{busy=false;updateButton.Text=L.T("업데이트");updateButton.Enabled=availableUpdate!=null;if(exitRequested)Close();else if(active)watch.Start();}
  }
  Button NavButton(string text,int width){var b=new RoundedButton{Text=text,NavigationStyle=true,Size=new Size(width,40),ForeColor=Color.FromArgb(201,207,221),BackColor=Color.FromArgb(29,33,43),Font=new Font("Malgun Gothic",10,FontStyle.Bold)};navigation.Controls.Add(b);return b;}
  ContextMenuStrip NavMenu(){var m=new ContextMenuStrip{ShowImageMargin=false,BackColor=Color.FromArgb(29,33,43),ForeColor=fg,Font=new Font("Malgun Gothic",10),Padding=new Padding(6),Renderer=new ToolStripProfessionalRenderer(new NavigationColors())};m.Closed+=delegate{BeginInvoke((Action)(()=>m.Dispose()));};return m;}
  void LayoutNavigation(){
   if(navigation==null)return;float scale;using(var g=CreateGraphics())scale=g.DpiX/96f;
-  int[] widths={80,48,104,44,44,170,80};int x=(int)(12*scale),gap=(int)(6*scale),height=(int)(58*scale);
+  int[] widths={80,48,104,44,44,90,170,80};int x=(int)(12*scale),gap=(int)(6*scale),height=(int)(58*scale);
   for(int i=0;i<navigation.Controls.Count;i++){navigation.Controls[i].Bounds=new Rectangle(x,(int)(9*scale),(int)(widths[i]*scale),(int)(40*scale));x+=navigation.Controls[i].Width+gap;}
   int width=x+(int)(6*scale);navigation.Bounds=new Rectangle((ClientSize.Width-width)/2,(int)(18*scale),width,height);
   brand.Visible=navigation.Left>brand.Right+(int)(12*scale);

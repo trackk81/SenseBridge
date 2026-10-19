@@ -145,3 +145,13 @@ python source/build_attach.py
 실크송 데이터는 Steam 빌드 22479045에 대응합니다. 다른 게임 빌드는 어셈블리 해시 검사로 거부하며, 기존의 다른 모드 로더 파일을 덮어쓰지 않습니다. 상세 범위와 검증 한계는 [릴리스 노트](RELEASE-0.1.5.md)에 있습니다.
 
 개발용 Unity 연결 모듈은 `build-events.ps1 -UnityManaged <게임의 Managed 폴더> -BepInExCore <BepInEx core 폴더>`로 빌드합니다. 게임 어셈블리는 배포하지 않습니다. 배포 런타임에는 BepInEx 5.4.23.3 로더와 라이선스가 필요합니다.
+
+## 프로그램 업데이트 (0.1.6부터)
+
+상단의 **업데이트** 버튼은 새 정식 버전이 있을 때만 활성화됩니다. 시작할 때와 6시간마다 확인합니다. 누르면 업데이트 ZIP 다운로드 및 SHA-256·파일 목록 검사 후 앱을 정상 종료하고 교체·재실행합니다. 게임 목록·경로·옵션과 별도 데이터 팩은 보존합니다. 실패 시 변경 파일을 복구하며, 백업과 오류 기록은 `%TEMP%/SenseBridge-update-…`에 보관됩니다.
+
+0.1.5 이하는 이 버튼이 없으므로 0.1.6 전체 ZIP으로 한 번 수동 전환해야 합니다. 기존 폴더의 `profiles`, `packs`, `Bloodborne/runtime/dualsense.ini`를 보관하면 설정을 이전할 수 있습니다. 이후부터 앱 내부 업데이트를 사용하세요. 전체 ZIP과 업데이트 ZIP은 서로 다른 용도이며, 업데이트 ZIP은 사용자가 직접 압축 해제하는 용도가 아닙니다.
+
+### 릴리스 제작
+
+본체와 `SenseBridge.Updater.exe`를 빌드하고 깨끗한 `dist/SenseBridge-<버전>-win-x64` 폴더를 준비한 뒤 `python tools/package-release.py <버전>`을 실행합니다. 이 스크립트는 전체 ZIP, 사용자 설정을 제외한 업데이트 ZIP, 파일별 해시를 담은 `update-manifest.json`, SHA256SUMS를 생성합니다. `tests/ReleaseUpdateTest.cs`로 실제 업데이트 패키지를 검증한 뒤 동일한 GitHub 릴리스에 모두 첨부하세요. 각 게임 데이터 팩은 계속 별도 첨부합니다. 기존 업데이트 호환성을 유지하고, 호환되지 않으면 최소 버전을 명시해 전체 ZIP 설치를 안내해야 합니다.

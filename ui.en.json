@@ -144,5 +144,10 @@
   "데이터 다운로드": "Download data",
   "다운로드 중…": "Downloading…",
   "전용 데이터를 다운로드하면 설정이 표시됩니다.": "Download the game data to configure its effects.",
-  "데이터 다운로드 완료. 게임을 종료한 뒤 실행 파일을 지정해 연결하세요.": "Data downloaded. Close the game, then select its executable to connect."
+  "데이터 다운로드 완료. 게임을 종료한 뒤 실행 파일을 지정해 연결하세요.": "Data downloaded. Close the game, then select its executable to connect.",
+  "업데이트": "Update",
+  "업데이트 확인 중": "Checking for updates",
+  "최신 버전입니다.": "Up to date.",
+  "새 버전: ": "New version: ",
+  "업데이트 확인 실패 · 나중에 다시 확인합니다.": "Update check failed. Will retry later."
 }
