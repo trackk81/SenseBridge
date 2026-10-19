@@ -1,0 +1,19 @@
+{
+  "Format": "SenseBridge.GamePreset",
+  "Version": 1,
+  "Title": "My Game",
+  "Adapter": "global-audio",
+  "SteamAppId": null,
+  "Triggers": true,
+  "Haptics": true,
+  "Speaker": false,
+  "AdapterSha256": null,
+  "Settings": {
+    "gain": "1.50",
+    "left_preferred_mode": "2",
+    "right_preferred_mode": "0",
+    "left_force": "3",
+    "right_force": "3"
+  },
+  "Assets": []
+}
