@@ -125,8 +125,8 @@ public sealed class MainForm:Form {
    if(busy){e.Cancel=true;status.Text=L.T("연결 작업 종료 중");return;}
    watch.Dispose();updateTimer.Stop();updateTimer.Dispose();navTips.Dispose();tray.Visible=false;tray.Dispose();
   };
-  BuildNavigation();Resize+=delegate{LayoutNavigation();};Shown+=delegate{LayoutNavigation();CheckUpdates();updateTimer.Start();};
-  updateTimer.Tick+=delegate{CheckUpdates();};
+  BuildNavigation();Resize+=delegate{LayoutNavigation();};Shown+=delegate{LayoutNavigation();CheckUpdates();RefreshCatalog();updateTimer.Start();};
+  updateTimer.Tick+=delegate{CheckUpdates();RefreshCatalog();};
   watch.Tick+=delegate{CheckGame();};
   var startupGames=Store.LoadGames();SteamLibrary.Import(startupGames);Store.SaveGames(startupGames);foreach(var game in startupGames)library.Items.Add(game);
   if(library.Items.Count>0)library.SelectedIndex=0;else{use.Enabled=false;UpdateLayout();}
@@ -136,7 +136,7 @@ public sealed class MainForm:Form {
   var games=NavButton(L.T("게임"),80);((RoundedButton)games).SelectedStyle=true;games.Click+=delegate{library.Focus();};
   add=NavButton("+",48);add.Font=new Font("Segoe UI",21);add.AccessibleName=L.T("게임 추가");navTips.SetToolTip(add,L.T("게임 추가"));
   add.Click+=delegate{var menu=NavMenu();menu.Items.Add(L.T("+ 게임 추가"),null,delegate{AddGame();});menu.Items.Add(L.T("Steam 게임 목록 추가"),null,delegate{ImportSteamGames();});menu.Show(add,new Point(0,add.Height+8));};
-  var data=NavButton(L.T("데이터 ▾"),104);data.Click+=delegate{var menu=NavMenu();var export=menu.Items.Add(L.T("데이터 내보내기"),null,delegate{ExportPreset();});export.Enabled=selected!=null;menu.Items.Add(L.T("데이터 불러오기"),null,delegate{ImportPreset();});menu.Show(data,new Point(0,data.Height+8));};
+  var data=NavButton(L.T("데이터 ▾"),104);data.Click+=delegate{var menu=NavMenu();menu.Items.Add(L.T("게임 데이터 자료실"),null,delegate{Process.Start(new ProcessStartInfo(GameDataCatalog.LibraryUrl){UseShellExecute=true});});var export=menu.Items.Add(L.T("데이터 내보내기"),null,delegate{ExportPreset();});export.Enabled=selected!=null;menu.Items.Add(L.T("데이터 불러오기"),null,delegate{ImportPreset();});menu.Show(data,new Point(0,data.Height+8));};
   var guide=NavButton("?",44);guide.Font=new Font("Segoe UI",16);guide.AccessibleName=L.T("프리셋 제작 매뉴얼");navTips.SetToolTip(guide,L.T("프리셋 제작 매뉴얼"));guide.Click+=delegate{try{string path=Path.Combine(Store.Root,"PRESET-GUIDE.ko.html");if(!File.Exists(path))throw new FileNotFoundException(L.T("매뉴얼 파일이 없습니다."));Process.Start(new ProcessStartInfo(path){UseShellExecute=true});}catch(Exception ex){Error(ex);}};
   settings=NavButton("⚙",44);settings.Font=new Font("Segoe UI Symbol",16);settings.AccessibleName=L.T("프로그램 설정");navTips.SetToolTip(settings,L.T("프로그램 설정"));settings.Click+=delegate{OpenSettings();};
   updateButton=NavButton(L.T("업데이트"),90);updateButton.Enabled=false;updateButton.Click+=delegate{InstallUpdate();};navTips.SetToolTip(updateButton,L.T("업데이트 확인 중"));
@@ -144,6 +144,7 @@ public sealed class MainForm:Form {
   navigation.Controls.Add(quit);quit.Anchor=AnchorStyles.Top|AnchorStyles.Left;quit.Size=new Size(80,40);quit.Font=new Font("Malgun Gothic",9);((RoundedButton)quit).NavigationStyle=true;quit.ForeColor=Color.FromArgb(218,164,174);
   navigation.BringToFront();LayoutNavigation();
  }
+ async void RefreshCatalog(){try{await GameDataCatalog.Refresh();if(!IsDisposed&&!exitRequested){library.RefreshCards();UpdateLayout();}}catch{}}
  async void CheckUpdates(){
   if(checkingUpdate||busy||exitRequested||IsDisposed)return;checkingUpdate=true;
   try{var result=await AppUpdates.Check();if(IsDisposed||exitRequested)return;availableUpdate=result;updateButton.Enabled=result!=null;navTips.SetToolTip(updateButton,result==null?L.T("최신 버전입니다."):L.T("새 버전: ")+result.Version);}
@@ -198,7 +199,7 @@ public sealed class MainForm:Form {
   if(busy||!PackDownloads.Available(selected))return;
   busy=true;watch.Stop();UpdateLayout();choose.Text=L.T("다운로드 중…");
   try{
-   var preset=await PackDownloads.Download(Store.Root);if(exitRequested)return;
+   var preset=await PackDownloads.Download(Store.Root,selected);if(exitRequested)return;
    active=false;StopEffects();use.Text=L.T("자동 적용 시작");
    var games=library.Items.Cast<GameProfile>().ToList();
    if(selected!=null&&string.IsNullOrEmpty(selected.SteamAppId))selected.SteamAppId=preset.SteamAppId;
