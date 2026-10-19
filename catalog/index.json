@@ -1,0 +1,17 @@
+{
+  "Format": 1,
+  "Games": [
+    {
+      "Title": "Hollow Knight: Silksong",
+      "SteamAppId": "1030300",
+      "Executable": "Hollow Knight Silksong.exe",
+      "PackId": "silksong-audio-01",
+      "Adapter": "unity-audio-v1",
+      "Version": "1.0",
+      "MinimumAppVersion": "0.1.5",
+      "Url": "https://github.com/trackk81/SenseBridge/releases/download/game-data/Silksong-1.0.sensebridge.json",
+      "Sha256": "779ddf6cb2e01bdb03508fa4bdc10cd04a5499c52b4795f90037553bb2528b56",
+      "Size": 11753673
+    }
+  ]
+}
