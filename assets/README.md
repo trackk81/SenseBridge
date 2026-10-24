@@ -1,0 +1,1 @@
+Bloodborne cover artwork supplied by the repository owner for the game card. This third-party artwork is not covered by the source-code license; rights remain with its respective owners. Steam covers are read from the local Steam cache and are not bundled here.

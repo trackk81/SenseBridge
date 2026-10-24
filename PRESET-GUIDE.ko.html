@@ -1,0 +1,58 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SenseBridge 프리셋 제작 매뉴얼</title><style>
+:root{color-scheme:dark}body{margin:0;background:#11141e;color:#e7eaf4;font:16px/1.8 system-ui,'Malgun Gothic',sans-serif}main{max-width:850px;margin:auto;padding:48px 24px 80px}h1{font-size:30px}h2{margin-top:44px;font-size:23px;border-bottom:1px solid #343b50;padding-bottom:8px}h3{font-size:18px}a{color:#b6a8ff}code,pre{font-family:Consolas,monospace;background:#202637;border-radius:6px}code{padding:2px 6px}pre{padding:20px;overflow:auto;font-size:14px;line-height:1.6}pre code{padding:0}.note{padding:16px 20px;background:#202437;border-left:3px solid #a692ff;border-radius:8px}li{margin:7px 0}small{color:#aeb8cc}@media print{:root{color-scheme:light}body{background:white;color:black}pre,.note,code{background:#eee}a{color:#333}main{padding:0}}</style></head><body><main>
+<h1>SenseBridge 프리셋 제작 매뉴얼</h1>
+<p>게임별 설정을 <code>.sensebridge.json</code> 파일 하나로 내보내고 공유하는 방법입니다. 프리셋 형식 버전은 <strong>1</strong>입니다.</p>
+<nav><a href="#create">프로그램에서 만들기</a> · <a href="#import">불러오기</a> · <a href="#json">JSON 직접 만들기</a> · <a href="#bloodborne">블러드본 데이터</a> · <a href="#errors">문제 해결</a></nav>
+<h2 id="create">1. 프로그램에서 만들기</h2>
+<ol><li><strong>게임 추가</strong>로 게임을 등록하거나 Steam 목록에서 게임을 선택합니다.</li><li>게임 카드를 열어 사용할 <strong>어댑티브 트리거·오디오 햅틱·스피커</strong>를 체크합니다. 스피커는 블러드본 전용 기능입니다.</li><li><strong>상세 옵션</strong>에서 햅틱 강도와 트리거 설정 등을 조절하고 저장합니다. 실제 게임에서 먼저 느낌을 확인하면 좋습니다.</li><li>게임 설정 창을 닫습니다. 방금 선택한 게임 카드가 선택된 상태에서 상단의 <strong>데이터 ▾ → 데이터 내보내기</strong>를 누릅니다.</li><li>예를 들어 <code>MyGame.sensebridge.json</code>으로 저장합니다. 내보낸 파일을 다른 사용자에게 전달하면 됩니다.</li></ol>
+<p>게임 제목·Steam ID·기능 체크 상태·상세 설정이 저장됩니다. PC마다 다른 게임 실행 경로, 사용자 폴더 경로, 오디오 장치 ID는 포함하지 않습니다. 블러드본은 햅틱 캐시와 별도 효과음도 포함하므로 약 72MB입니다. 일반 게임은 작은 설정 파일입니다.</p>
+<h2 id="import">2. 다른 사람이 만든 프리셋 불러오기</h2>
+<ol><li>상단 <strong>데이터 ▾ → 데이터 불러오기</strong>에서 받은 JSON 파일을 선택합니다.</li><li>게임 제목과 추가·교체 안내를 확인합니다. 같은 Steam ID의 게임, 같은 제목의 일반 게임 또는 기존 블러드본 항목이 있으면 해당 설정을 교체합니다. 기존 항목의 실행 파일 경로는 유지합니다.</li><li>블러드본은 리소스 교체 전 게임을 정상 종료해야 합니다. 호환되는 연결 모듈이 설치돼 있어야 합니다.</li><li>새로 추가된 게임은 카드를 열어 <strong>실행 파일 지정</strong>을 누릅니다. Steam 게임은 Steam 목록을 다시 가져와 설치 위치를 연결할 수도 있습니다.</li><li>기능 체크 상태를 확인하고 <strong>자동 적용 시작</strong>을 누릅니다. 불러오기 자체로 자동 적용이 시작되지는 않습니다.</li></ol>
+<p>기존 설정을 보관하려면 교체하기 전에 해당 게임을 먼저 내보내세요. 불러온 일반 게임의 오디오 출력 장치는 Windows 기본 장치로 설정됩니다. 필요하면 상세 옵션에서 다시 선택하세요.</p>
+<h2 id="json">3. 일반 게임용 JSON 직접 만들기</h2>
+<p>아래 전체 내용을 UTF-8 텍스트 파일로 저장하고 확장자를 <code>.sensebridge.json</code>으로 지정합니다. 쉼표, 큰따옴표, 대소문자를 유지하세요. JSON에는 주석을 넣을 수 없습니다.</p>
+<pre><code>{
+  "Format": "SenseBridge.GamePreset",
+  "Version": 1,
+  "Title": "My Game",
+  "Adapter": "global-audio",
+  "SteamAppId": null,
+  "Triggers": true,
+  "Haptics": true,
+  "Speaker": false,
+  "AdapterSha256": null,
+  "Settings": {
+    "gain": "1.50",
+    "left_preferred_mode": "2",
+    "right_preferred_mode": "0",
+    "left_force": "3",
+    "right_force": "3"
+  },
+  "Assets": []
+}</code></pre>
+<h3>항목 설명</h3>
+<ul><li><code>Title</code>: 게임 제목. 1~160자이며 줄바꿈 등 제어 문자는 넣지 않습니다.</li><li><code>SteamAppId</code>: Steam 게임의 숫자 ID를 문자열로 입력합니다. 예: <code>"12345"</code>. 없는 경우 <code>null</code>입니다. 다른 게임의 ID를 넣지 마세요.</li><li><code>Triggers</code>, <code>Haptics</code>: 사용할 기능이면 <code>true</code>, 끄려면 <code>false</code>입니다.</li><li><code>Speaker</code>: 일반 게임용 공통 엔진에서는 반드시 <code>false</code>입니다.</li><li><code>gain</code>: 햅틱 강도, <code>0</code>~<code>4</code>. 소수 사용 가능. 값은 문자열로 씁니다.</li><li><code>left_preferred_mode</code>, <code>right_preferred_mode</code>: L2/R2 방식. <code>0</code> 끄기, <code>1</code> 지속 저항, <code>2</code> 걸림·끊김.</li><li><code>left_force</code>, <code>right_force</code>: L2/R2 강도. <code>0</code>~<code>8</code> 정수.</li></ul>
+<p>위의 설정 5개는 모두 필요합니다. <code>source</code>나 실행 경로 등 임의의 설정 키를 추가하지 마세요. <code>Format</code>, <code>Version</code>, <code>Adapter</code>, <code>AdapterSha256</code>, <code>Assets</code>는 예제 그대로 둡니다.</p>
+<div class="note"><strong>일반 게임 프리셋의 범위</strong><br>공통 엔진은 선택한 출력 장치의 전체 소리를 햅틱으로 변환합니다. JSON을 작성하는 것만으로 특정 게임의 총 발사·피격·발소리 이벤트를 직접 인식하거나 게임의 발사 판정 위치를 변경하지는 않습니다. 그런 전용 기능에는 별도의 게임 연결 모듈 개발이 필요합니다.</div>
+<h2 id="bloodborne">4. 블러드본 데이터 구성</h2>
+<p>블러드본은 프로그램의 <strong>데이터 내보내기</strong>로 만드는 방식을 사용하세요. 일반 게임 예제의 Adapter 이름만 바꿔서는 만들 수 없습니다.</p>
+<ul><li>게임 제목과 기능 체크 상태</li><li>햅틱 강도, 트리거 강도·발사 지점, 스피커 볼륨, 내장 공격 이벤트 마스크</li><li><code>auto-haptics.bin</code>: 기존 57개 + AI 분석으로 선별한 607개, 총 664개 햅틱 캐시</li><li>효과음 WAV 10개: 물약·혈탄 관련 5개(현재 사용 2개·호환용 3개), 내장 공격 관련 5개</li><li>리소스별 SHA-256과 호환되는 연결 모듈의 SHA-256</li></ul>
+<p>664개는 햅틱 파형 캐시의 수이고, WAV 10개는 별도 재생·이벤트용 음원 수입니다. AI 분석 대상이 10개뿐이라는 뜻은 아닙니다. 파일 안의 바이너리 리소스는 Base64 문자열로 담깁니다.</p>
+<p>프로그램 실행 파일·DLL·게임 본체·세이브·AI 모델은 JSON에 넣지 않습니다. 무기별 트리거 판정과 게임 이벤트 연결 코드는 호환되는 SenseBridge 모듈이 담당합니다. 받는 사람도 같은 배포본의 연결 모듈을 사용해야 합니다.</p>
+<h3>블러드본 설정 값</h3>
+<ul><li><code>haptic_gain</code>: 0~4, 소수 가능</li><li><code>trigger_strength</code>: 0~80 정수</li><li><code>fire_percent</code>: 35~85 정수</li><li><code>speaker_volume</code>: 0~100 정수</li><li><code>visceral_sound_mask</code>: 0~31 정수. 검증된 기본값은 6이며, 이벤트 연결을 모르면 유지하세요.</li></ul>
+<p>숫자는 JSON 문자열로 저장합니다. AI 햅틱은 오디오 햅틱에 통합돼 있어 별도 설정이 없습니다. 기존의 자동 적용·이벤트 판정 코드는 프리셋으로 바꾸지 않습니다.</p>
+<h2 id="errors">5. 불러오기에 실패할 때</h2>
+<ul><li><strong>연결 모듈이 호환되지 않음</strong>: 내보낸 PC와 같은 배포본을 사용하세요. 같은 버전 표시라도 DLL을 별도로 다시 빌드했다면 해시가 달라질 수 있습니다.</li><li><strong>리소스 무결성 검사 실패</strong>: 파일이 손상됐거나 Base64/해시를 편집했을 수 있습니다. 프로그램에서 다시 내보낸 파일로 시도하세요.</li><li><strong>설정 값 범위 오류</strong>: 위 범위와 숫자 문자열 형식을 확인하세요. <code>NaN</code>, 무한대, 임의의 키는 허용하지 않습니다.</li><li><strong>게임이 리소스를 사용 중</strong>: Bloodborne을 정상 종료한 후 불러옵니다.</li><li><strong>목록에 추가됐지만 효과가 없음</strong>: 자신의 PC에 맞는 실행 파일을 지정하고 기능 체크 및 자동 적용 시작을 확인하세요.</li></ul>
+<p>프리셋 JSON은 최대 100MiB, 포함 리소스는 합계 64MiB까지 허용합니다. 지원되지 않는 버전·연결 모듈·리소스 경로나 허용 범위를 벗어난 값은 적용 전에 거부합니다.</p>
+<h2>6. 공유 전 확인</h2>
+<ol><li>내보낸 파일을 별도 설치 폴더에서 불러와 제목과 옵션이 유지되는지 확인합니다.</li><li>게임 이름과 사용한 SenseBridge 배포 버전, USB 연결 조건을 함께 안내합니다.</li><li>일반 게임용 오디오 프리셋인지, 블러드본 전용 이벤트 프리셋인지 구분해서 소개합니다.</li><li>게임 실행 파일이나 세이브를 추가하지 말고, 포함 음원의 재배포 권한이 있는 범위에서 공유하세요.</li></ol>
+<small>SenseBridge 프리셋 형식 v1 · 데이터 내보내기/불러오기 기능용 매뉴얼</small>
+<h2>7. Unity 효과음 이벤트 팩 — 시험 기능</h2>
+<p>실크송은 기본 내장 게임이 아닙니다. <code>Silksong.sensebridge.json</code>을 데이터 불러오기로 추가하면 기존 Steam 항목이 전용 이벤트 프로필로 바뀝니다. 같은 파일을 다시 가져와도 항목이 중복되지 않습니다. 현재 공개 0.1.4가 아닌, 이벤트 팩을 지원하는 시험 빌드가 필요합니다.</p>
+<ol><li>게임을 정상 종료합니다.</li><li>상단 데이터 → 데이터 불러오기에서 팩을 선택합니다.</li><li>Steam 설치 경로가 있으면 연결 모듈을 설치합니다. 경로가 없다면 해당 게임의 실행 파일 지정을 누릅니다.</li><li>게임을 다시 실행하고 원하는 기능을 체크한 뒤 자동 적용을 시작합니다. 기본 체크는 모두 꺼져 있습니다.</li></ol>
+<p>JSON v2의 <code>Unity</code>에는 팩 ID, 실행 파일 이름, 게임 코드 SHA-256과 효과음의 이름·주파수·샘플 수가 들어갑니다. <code>events.bin</code>에는 48kHz 햅틱 파형과 선택된 스피커 음원이 포함됩니다. 실행 코드, 게임 설치 경로, 세이브는 포함하지 않습니다. 연결 코드는 SenseBridge가 제공하는 공통 Unity 모듈이 담당합니다. 게임 업데이트로 해시가 바뀌면 재검증한 팩이 필요합니다.</p>
+<p>현재 실크송 시험 팩은 9,360개 음원을 추출하고 중복을 제외한 9,310개 파일을 CLAP으로 분석했습니다. 실제 적용 후보는 220개입니다. 145개 이동 효과음은 이름과 파형을 함께 사용했고, 75개 동작 효과음은 이름 확인과 AI 효과음 판정을 통과했습니다. 짧은 발소리의 AI 재질 분류는 오분류가 있어 그대로 사용하지 않습니다. AI 결과는 재질의 정답이나 모든 게임 동작의 검증을 뜻하지 않습니다.</p>
+<p>스피커용 효과음은 회복·도구 관련 7개입니다. 트리거 시험 팩은 대시 3개·공격 9개·도구 사용 3개 효과음을 게임의 현재 버튼 매핑과 연결합니다. 해당 동작이 L2/R2에 배정됐을 때 실제 효과음 재생에 맞춰 100ms 저항 펄스를 보냅니다. 상시 저항은 제거했습니다. 햅틱 상세 옵션에서 L2/R2 강도를 0~8로 조절하며, 0은 해당 트리거 출력을 끕니다. 회복 동작의 트리거 연결과 플레이 체감 검증은 별도 확인이 필요합니다. 반복 음원과 2초 초과 효과음, 예약 재생 경로는 현재 시험 범위 밖입니다.</p>
+<p>연결 모듈은 게임 폴더에 BepInEx와 SenseBridge 플러그인을 추가합니다. 기존의 다른 모드 로더와 파일이 다르면 덮어쓰지 않고 중단합니다. 게임 원본 실행 파일과 세이브는 편집하지 않습니다.</p>
+</main></body></html>

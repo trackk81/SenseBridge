@@ -1,0 +1,48 @@
+{
+  "version": "0.1.4",
+  "model": "laion/clap-htsat-unfused",
+  "banks": 504,
+  "entries": 70516,
+  "unique_pcm": 35027,
+  "new_clips": 607,
+  "footsteps": 441,
+  "impacts": 166,
+  "baseline_preserved": 57,
+  "total_clips": 664,
+  "domain_validation": {
+    "method": "Nearest labeled CLAP audio embedding; top positive-vs-other margin; raw zero-shot tags retained separately",
+    "reference_type": "Filename-derived weak labels, not human listening ground truth",
+    "split": "PCM hash modulo 5: holdout=0 calibration=1 training=2,3,4",
+    "anchor_counts": {
+      "other": 14447,
+      "footsteps": 55,
+      "impact": 19
+    },
+    "families": {
+      "impact": {
+        "enabled": true,
+        "threshold": 0.8,
+        "margin": 0.03,
+        "calibration_count": 7,
+        "holdout_count": 3,
+        "holdout_correct": 3,
+        "holdout_precision": 1.0
+      },
+      "footsteps": {
+        "enabled": true,
+        "threshold": 0.8,
+        "margin": 0.05,
+        "calibration_count": 24,
+        "holdout_count": 24,
+        "holdout_correct": 24,
+        "holdout_precision": 1.0
+      }
+    }
+  },
+  "baseline_zero_shot": {
+    "agree": 14,
+    "disagree": 36,
+    "event_identity_required": 7
+  },
+  "limitations": "Filename-derived weak labels, not human ground truth. Impact holdout sample is small. Material subtypes not validated. Exact identity does not establish local ownership."
+}
