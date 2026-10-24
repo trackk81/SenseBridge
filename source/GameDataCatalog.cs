@@ -17,7 +17,8 @@ public static class GameDataCatalog {
   }
  }
  static void Load(){if(loaded)return;loaded=true;try{var index=Store.Json.Deserialize<GameDataIndex>(File.ReadAllText(Path.Combine(Store.Root,"profiles","catalog-cache.json")));Validate(index);entries=index.Games;}catch{}}
- public static GameDataEntry Find(GameProfile g){Load();if(g==null)return null;return entries.FirstOrDefault(e=>(g.SteamAppId==e.SteamAppId||string.Equals(Path.GetFileName(g.EngineExecutable),e.Executable,StringComparison.OrdinalIgnoreCase))&&new Version(e.MinimumAppVersion)<=AppUpdates.Current);}
+ public static bool Listed(GameProfile g){Load();return g!=null&&entries.Any(e=>g.SteamAppId==e.SteamAppId||string.Equals(Path.GetFileName(g.EngineExecutable),e.Executable,StringComparison.OrdinalIgnoreCase));}
+ public static GameDataEntry Find(GameProfile g){Load();if(g==null)return null;return entries.FirstOrDefault(e=>(g.SteamAppId==e.SteamAppId||string.Equals(Path.GetFileName(g.EngineExecutable),e.Executable,StringComparison.OrdinalIgnoreCase))&&(e.Adapter=="unity-audio-v1"||e.Adapter==Ac6Data.Adapter)&&new Version(e.MinimumAppVersion)<=AppUpdates.Current);}
  public static async Task Refresh(){
   ServicePointManager.SecurityProtocol|=SecurityProtocolType.Tls12;var req=(HttpWebRequest)WebRequest.Create(IndexUrl);req.UserAgent="SenseBridge-catalog";
   using(var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(30)))using(timeout.Token.Register(()=>req.Abort()))using(var response=(HttpWebResponse)await req.GetResponseAsync()){

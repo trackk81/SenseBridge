@@ -12,6 +12,18 @@
       "Url": "https://github.com/trackk81/SenseBridge/releases/download/game-data/Silksong-1.0.sensebridge.json",
       "Sha256": "779ddf6cb2e01bdb03508fa4bdc10cd04a5499c52b4795f90037553bb2528b56",
       "Size": 11753673
+    },
+    {
+      "Title": "ARMORED CORE VI FIRES OF RUBICON",
+      "SteamAppId": "1888160",
+      "Executable": "armoredcore6.exe",
+      "PackId": "ac6-audio-01",
+      "Adapter": "ac6-audio-v1",
+      "Version": "1.0",
+      "MinimumAppVersion": "0.1.8",
+      "Url": "https://github.com/trackk81/SenseBridge/releases/download/game-data/ArmoredCoreVI-1.0.sensebridge.json",
+      "Sha256": "f3ef877ca115ae6138c7e8914b7ff13ab0752c02d6cc0059ed17032631fedd6f",
+      "Size": 26552769
     }
   ]
 }

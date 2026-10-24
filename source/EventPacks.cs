@@ -5,7 +5,7 @@ public sealed class TriggerStateRule {public string Fsm{get;set;}public string S
 public sealed class UnityAudioPack {public string ActorComponent{get;set;}public List<TriggerStateRule> StateRules{get;set;}public string InputComponent{get;set;}public string ActionSetField{get;set;}public string PackId{get;set;}public string Executable{get;set;}public string AssemblySha256{get;set;}public List<AudioEventRule> Rules{get;set;}}
 public static class EventPacks {
  public static bool Is(GameProfile g){return g!=null&&g.Adapter=="unity-audio-v1";}
- public static bool Dedicated(GameProfile g){return Store.Supported(g)||Is(g);}
+ public static bool Dedicated(GameProfile g){return Store.Supported(g)||Is(g)||Ac6Support.Is(g);}
  public static string DirectoryFor(string root,string id){if(string.IsNullOrEmpty(id)||id.Length>80||id.Any(c=>!(c>='a'&&c<='z'||c>='0'&&c<='9'||c=='-')))throw new InvalidDataException("Invalid pack ID");return Path.Combine(root,"packs",id);}
  public static string Config(string root,GameProfile g){return Path.Combine(DirectoryFor(root,g.PackId),"session.ini");}
  public static void Validate(GamePreset p){

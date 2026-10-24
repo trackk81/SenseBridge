@@ -16,6 +16,15 @@ public static class UpdatePackage {
   if(string.IsNullOrEmpty(p)||p.Length>200||p.Contains("\\")||p.Contains(":")||p.StartsWith("/")||p.Split('/').Any(x=>x==""||x=="."||x==".."||x.EndsWith(".")||x.EndsWith(" ")||x.IndexOfAny(Path.GetInvalidFileNameChars())>=0))return false;
   string[] roots={"SenseBridge.exe","SenseBridge.Updater.exe","SenseBridge.Engine.exe","SenseBridge.Events.exe","SenseBridge.Bloodborne.dll","SDL3.dll","libc++.dll","libiconv-2.dll","libwinpthread-1.dll","attach-profile.json","ui.en.json","ui.ja.json","README.md","START-HERE.txt","THIRD-PARTY-NOTICES.txt","PRESET-GUIDE.ko.html"};
   if(roots.Contains(p,StringComparer.Ordinal))return true;
+  if(p.StartsWith("Ac6Runtime/research/",StringComparison.Ordinal)&&p.Split('/').Length==3&&p.EndsWith(".py",StringComparison.Ordinal))return true;
+  if(p=="Ac6Runtime/trace/SenseBridge.Ac6Trace.dll")return true;
+  if(p=="Ac6Runtime/sd-public.pem")return true;
+  if(p.StartsWith("Runtime/Decoder/",StringComparison.Ordinal)&&p.Split('/').Length==3&&(p.EndsWith(".dll",StringComparison.Ordinal)||p=="Runtime/Decoder/vgmstream-cli.exe"||p=="Runtime/Decoder/COPYING"||p=="Runtime/Decoder/README.md"))return true;
+  if(p.StartsWith("Runtime/Python/",StringComparison.Ordinal)){
+   var parts=p.Split('/');string name=parts[parts.Length-1];
+   if(parts.Length==3&&new[]{"python.exe","python313.dll","python3.dll","python313.zip","python313._pth","vcruntime140.dll","vcruntime140_1.dll","LICENSE.txt"}.Contains(name))return true;
+   if(parts.Length==4&&parts[2]=="DLLs"&&(name.EndsWith(".pyd",StringComparison.Ordinal)||name.EndsWith(".dll",StringComparison.Ordinal)))return true;
+  }
   if(p.StartsWith("RELEASE-",StringComparison.Ordinal)&&p.EndsWith(".md",StringComparison.Ordinal)&&!p.Contains('/'))return true;
   if(p=="Bloodborne/runtime/auto-haptics.bin")return true;
   if(p.StartsWith("Bloodborne/runtime/effects/",StringComparison.Ordinal)&&p.EndsWith(".wav",StringComparison.Ordinal)&&p.Split('/').Length==4)return true;

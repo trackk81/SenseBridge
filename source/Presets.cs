@@ -12,7 +12,7 @@ public sealed class PresetAsset {public string Name{get;set;}public string Sha25
 public sealed class GamePreset {
  public string Format{get;set;}public int Version{get;set;}public string Title{get;set;}public string Adapter{get;set;}public string SteamAppId{get;set;}
  public bool Triggers{get;set;}public bool Haptics{get;set;}public bool Speaker{get;set;}
- public UnityAudioPack Unity{get;set;}public string AdapterSha256{get;set;}public Dictionary<string,string> Settings{get;set;}public List<PresetAsset> Assets{get;set;}
+ public UnityAudioPack Unity{get;set;}public Ac6PackInfo Ac6{get;set;}public string AdapterSha256{get;set;}public Dictionary<string,string> Settings{get;set;}public List<PresetAsset> Assets{get;set;}
 }
 public static class Presets {
  const int MaxJson=100*1024*1024;
@@ -26,24 +26,27 @@ public static class Presets {
   {"left_force",new decimal[]{0,8,3}},{"right_force",new decimal[]{0,8,3}}
  };
  static readonly Dictionary<string,decimal[]> EventRules=new Dictionary<string,decimal[]> {{"gain",new decimal[]{0,4,2}},{"speaker_volume",new decimal[]{0,100,25}},{"left_force",new decimal[]{0,8,3}},{"right_force",new decimal[]{0,8,3}}};
+ static readonly Dictionary<string,decimal[]> Ac6Rules=new Dictionary<string,decimal[]> {{"gain",new decimal[]{0,4,1.5M}},{"speaker_volume",new decimal[]{0,35,20}},{"left_force",new decimal[]{0,8,3}},{"right_force",new decimal[]{0,8,3}}};
  static bool Unity(GamePreset p){return p.Adapter=="unity-audio-v1";}
+ static bool Native(GamePreset p){return Ac6Data.Is(p);}
  static bool Blood(GamePreset p){return p.Adapter=="bloodborne-usb-v4";}
  static JavaScriptSerializer Serializer(){return new JavaScriptSerializer{MaxJsonLength=MaxJson,RecursionLimit=32};}
  public static string Hash(byte[] b){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(b)).Replace("-","").ToLowerInvariant();}
  static string Runtime(string root){return Path.Combine(root,@"Bloodborne\runtime");}
- public static string ConfigPath(string root,GameProfile g){return EventPacks.Is(g)?EventPacks.Config(root,g):Store.Supported(g)?Path.Combine(Runtime(root),"dualsense.ini"):Path.Combine(root,"profiles","global-"+string.Concat(g.Id.Where(char.IsLetterOrDigit))+".ini");}
+ public static string ConfigPath(string root,GameProfile g){return g.Adapter==Ac6Data.Adapter?Path.Combine(Ac6Data.DirectoryFor(root),"config.ini"):EventPacks.Is(g)?EventPacks.Config(root,g):Store.Supported(g)?Path.Combine(Runtime(root),"dualsense.ini"):Path.Combine(root,"profiles","global-"+string.Concat(g.Id.Where(char.IsLetterOrDigit))+".ini");}
  static string[] Names(){return new[]{"auto-haptics.bin"}.Concat(Effects.Select(n=>"effects/"+n)).ToArray();}
  static string AssetPath(string root,string name){return Path.Combine(Runtime(root),name.Replace('/',Path.DirectorySeparatorChar));}
  public static GamePreset Capture(string root,GameProfile game){
   if(game==null)throw new InvalidDataException(L.T("게임을 선택해 주세요."));
   var p=new GamePreset{Format="SenseBridge.GamePreset",Version=EventPacks.Is(game)?2:1,Title=game.Name,Adapter=game.Adapter,SteamAppId=game.SteamAppId,Triggers=game.UseTriggers,Haptics=game.UseHaptics,Speaker=EventPacks.Dedicated(game)&&game.UseSpeaker,Settings=new Dictionary<string,string>(),Assets=new List<PresetAsset>()};
-  var values=Store.ReadIni(ConfigPath(root,game));var rules=Blood(p)?BloodRules:Unity(p)?EventRules:GlobalRules;
+  var values=Store.ReadIni(ConfigPath(root,game));var rules=Blood(p)?BloodRules:Native(p)?Ac6Rules:Unity(p)?EventRules:GlobalRules;
   foreach(var rule in rules){string key=rule.Key;if(!values.ContainsKey(key)&&key.EndsWith("_preferred_mode")){string old=key.Replace("_preferred_mode","_mode");if(values.ContainsKey(old))values[key]=values[old];}p.Settings[key]=Store.Number(values,key,rule.Value[2],rule.Value[0],rule.Value[1]).ToString(CultureInfo.InvariantCulture);}
   if(Blood(p)){
    p.AdapterSha256=Hash(File.ReadAllBytes(Path.Combine(root,"SenseBridge.Bloodborne.dll")));
    foreach(string name in Names()){byte[] data=File.ReadAllBytes(AssetPath(root,name));p.Assets.Add(new PresetAsset{Name=name,Sha256=Hash(data),Data=Convert.ToBase64String(data)});}
   }
   if(Unity(p)){p.Unity=EventPacks.Manifest(root,game);byte[] data=File.ReadAllBytes(Path.Combine(EventPacks.DirectoryFor(root,game.PackId),"events.bin"));p.Assets.Add(new PresetAsset{Name="events.bin",Sha256=Hash(data),Data=Convert.ToBase64String(data)});}
+  if(Native(p))Ac6Data.Capture(p,root);
   Validate(p,root);return p;
  }
  public static void Export(string root,GameProfile game,string path){var p=Capture(root,game);string text=Serializer().Serialize(p);if(text.Length>MaxJson)throw new InvalidDataException(L.T("프리셋 파일이 너무 큽니다."));Store.Atomic(Path.GetFullPath(path),text);}
@@ -53,15 +56,17 @@ public static class Presets {
   Validate(p,root);return p;
  }
  public static void Validate(GamePreset p,string root){
-  if(p==null||p.Format!="SenseBridge.GamePreset"||(p.Version!=1&&p.Version!=2))throw new InvalidDataException(L.T("지원하지 않는 프리셋 형식 또는 버전입니다."));
+  if(p==null||p.Format!="SenseBridge.GamePreset"||(p.Version!=1&&p.Version!=2&&p.Version!=3))throw new InvalidDataException(L.T("지원하지 않는 프리셋 형식 또는 버전입니다."));
   if(string.IsNullOrWhiteSpace(p.Title)||p.Title.Length>160||p.Title.Any(char.IsControl))throw new InvalidDataException(L.T("게임 제목이 올바르지 않습니다."));
-  if(p.Adapter!="bloodborne-usb-v4"&&p.Adapter!="global-audio"&&!Unity(p))throw new InvalidDataException(L.T("지원하지 않는 게임 연결 모듈입니다."));
+  if(p.Adapter!="bloodborne-usb-v4"&&p.Adapter!="global-audio"&&!Unity(p)&&!Native(p))throw new InvalidDataException(L.T("지원하지 않는 게임 연결 모듈입니다."));
   if(!string.IsNullOrEmpty(p.SteamAppId)&&(p.SteamAppId.Length>12||p.SteamAppId.Any(c=>c<'0'||c>'9')))throw new InvalidDataException(L.T("Steam 게임 ID가 올바르지 않습니다."));
-  if(!Blood(p)&&!Unity(p)&&p.Speaker)throw new InvalidDataException(L.T("공통 엔진은 이벤트 스피커 재생을 지원하지 않습니다."));
-  var rules=Blood(p)?BloodRules:Unity(p)?EventRules:GlobalRules;
+  if(!Blood(p)&&!Unity(p)&&!Native(p)&&p.Speaker)throw new InvalidDataException(L.T("공통 엔진은 이벤트 스피커 재생을 지원하지 않습니다."));
+  var rules=Blood(p)?BloodRules:Native(p)?Ac6Rules:Unity(p)?EventRules:GlobalRules;
   if(p.Settings==null||p.Settings.Count!=rules.Count||p.Settings.Keys.Any(k=>!rules.ContainsKey(k)))throw new InvalidDataException(L.T("프리셋 설정 항목이 올바르지 않습니다."));
   foreach(var rule in rules){decimal v;if(!decimal.TryParse(p.Settings[rule.Key],NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out v)||v<rule.Value[0]||v>rule.Value[1]||(!rule.Key.Contains("gain")&&decimal.Truncate(v)!=v))throw new InvalidDataException(L.T("프리셋 설정 값이 허용 범위를 벗어났습니다."));}
   if(p.Assets==null)throw new InvalidDataException(L.T("프리셋 리소스 목록이 없습니다."));
+  if(Native(p)){Ac6Data.Validate(p);return;}
+  if(p.Ac6!=null)throw new InvalidDataException("Unexpected AC6 metadata");
   if(Unity(p)){EventPacks.Validate(p);return;}
   if(p.Version!=1||p.Unity!=null)throw new InvalidDataException("Unexpected event pack metadata");
   if(!Blood(p)){if(p.Assets.Count!=0||!string.IsNullOrEmpty(p.AdapterSha256))throw new InvalidDataException(L.T("공통 프리셋에 전용 리소스를 포함할 수 없습니다."));return;}
@@ -92,19 +97,20 @@ public static class Presets {
    if(id=="data"){if(data||!format||n==0||n%align!=0||n/(double)align/rate>10)throw new InvalidDataException("WAV duration");if(formatType==3)for(long j=at+8;j<end;j+=4){float v=BitConverter.ToSingle(b,(int)j);if(float.IsNaN(v)||float.IsInfinity(v)||v< -1||v>1)throw new InvalidDataException("WAV sample range");}data=true;}at=end+(n&1);
   }if(!format||!data)throw new InvalidDataException("WAV missing chunks");
  }
- public static GameProfile Find(List<GameProfile> games,GamePreset p){return games.FirstOrDefault(g=>(g.Adapter==p.Adapter||Unity(p)&&g.Adapter=="global-audio")&&(Blood(p)||!string.IsNullOrEmpty(p.SteamAppId)&&g.SteamAppId==p.SteamAppId||string.IsNullOrEmpty(p.SteamAppId)&&string.Equals(g.Name,p.Title,StringComparison.OrdinalIgnoreCase)));}
+ public static GameProfile Find(List<GameProfile> games,GamePreset p){return games.FirstOrDefault(g=>(g.Adapter==p.Adapter||(Unity(p)||Native(p))&&g.Adapter=="global-audio")&&(Blood(p)||!string.IsNullOrEmpty(p.SteamAppId)&&g.SteamAppId==p.SteamAppId||string.IsNullOrEmpty(p.SteamAppId)&&string.Equals(g.Name,p.Title,StringComparison.OrdinalIgnoreCase)));}
  public static List<GameProfile> Import(string root,List<GameProfile> current,GamePreset p){
   Validate(p,root);
   var games=Store.Json.Deserialize<List<GameProfile>>(Store.Json.Serialize(current));var g=Find(games,p);
   if(g==null){g=new GameProfile{Id=Blood(p)?"bloodborne":Guid.NewGuid().ToString("N"),Adapter=p.Adapter};games.Add(g);}
-  g.Adapter=p.Adapter;g.PackId=Unity(p)?p.Unity.PackId:null;g.Name=p.Title;g.SteamAppId=p.SteamAppId;g.UseTriggers=p.Triggers;g.UseHaptics=p.Haptics;g.UseSpeaker=p.Speaker;
+  g.Adapter=p.Adapter;g.PackId=Unity(p)?p.Unity.PackId:Native(p)?Ac6Data.Id:null;g.Name=p.Title;g.SteamAppId=p.SteamAppId;g.UseTriggers=Native(p)?false:p.Triggers;g.UseHaptics=Native(p)?false:p.Haptics;g.UseSpeaker=Native(p)?false:p.Speaker;
   var cfg=new Dictionary<string,string>(p.Settings);cfg["enabled"]="0";cfg["triggers"]=p.Triggers?"1":"0";cfg["haptics"]=p.Haptics?"1":"0";
   if(Blood(p)){cfg["speaker_mode"]=p.Speaker?"1":"0";cfg["speaker_playback_mode"]="1";cfg["isolated_audio"]="1";cfg["triangle_clip"]="0";cfg["up_clip"]="1";cfg["tactile_v2"]="1";cfg["auto_haptics"]="1";cfg["vial_haptics"]="1";cfg["visceral_haptics"]="1";cfg["visceral_gain"]="3";cfg["material_audio"]="1";cfg["footstep_audio"]="1";}
-  else if(Unity(p)){cfg["speaker"]=p.Speaker?"1":"0";}
+  else if(Unity(p)||Native(p)){cfg["speaker"]=p.Speaker?"1":"0";if(Native(p)){cfg["triggers"]=cfg["haptics"]=cfg["speaker"]="0";}}
   else{cfg["source"]="";foreach(var side in new[]{"left","right"})cfg[side+"_mode"]=p.Triggers?cfg[side+"_preferred_mode"]:"0";}
   var writes=new Dictionary<string,byte[]>();var utf8=new UTF8Encoding(false);
   writes[ConfigPath(root,g)]=utf8.GetBytes(string.Join("\n",cfg.Select(k=>k.Key+"="+k.Value))+"\n");
   writes[Path.Combine(root,@"profiles\games.json")]=utf8.GetBytes(Store.Json.Serialize(games));
+  if(Native(p)){foreach(var a in p.Assets)writes[Path.Combine(Ac6Data.DirectoryFor(root),a.Name)]=Convert.FromBase64String(a.Data);writes[Path.Combine(Ac6Data.DirectoryFor(root),"manifest.json")]=utf8.GetBytes(Store.Json.Serialize(p.Ac6));}
   if(Blood(p)){writes[Path.Combine(root,@"profiles\bloodborne-settings.json")]=utf8.GetBytes(Store.Json.Serialize(cfg));foreach(var a in p.Assets)writes[AssetPath(root,a.Name)]=Convert.FromBase64String(a.Data);}
   if(Unity(p)){string dir=EventPacks.DirectoryFor(root,g.PackId);writes[Path.Combine(dir,"manifest.json")]=utf8.GetBytes(Store.Json.Serialize(p.Unity));writes[Path.Combine(dir,"states.tsv")]=utf8.GetBytes(string.Join("\n",(p.Unity.StateRules??new List<TriggerStateRule>()).Select(r=>r.Fsm+"\t"+r.State+"\t"+r.Action+"\t"+r.Milliseconds+"\t"+r.Power)));writes[Path.Combine(dir,"events.bin")]=Convert.FromBase64String(p.Assets[0].Data);writes[Path.Combine(dir,"rules.tsv")]=utf8.GetBytes(string.Join("\n",p.Unity.Rules.Select(r=>r.Name+"\t"+r.Id+"\t"+r.Frequency+"\t"+r.Samples+"\t"+(r.TriggerAction??""))));}
   var backups=writes.Keys.ToDictionary(k=>k,k=>File.Exists(k)?File.ReadAllBytes(k):null);var done=new List<string>();

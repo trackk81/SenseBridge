@@ -1,7 +1,7 @@
-﻿using System.Reflection;
+using System.Reflection;
 [assembly: AssemblyTitle("SenseBridge")]
 [assembly: AssemblyDescription("DualSense USB companion for Windows")]
 [assembly: AssemblyProduct("SenseBridge")]
-[assembly: AssemblyVersion("0.1.6.0")]
-[assembly: AssemblyFileVersion("0.1.6.0")]
-[assembly: AssemblyInformationalVersion("0.1.6")]
+[assembly: AssemblyVersion("0.1.8.0")]
+[assembly: AssemblyFileVersion("0.1.8.0")]
+[assembly: AssemblyInformationalVersion("0.1.8")]

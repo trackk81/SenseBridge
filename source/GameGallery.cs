@@ -61,7 +61,7 @@ sealed class GameTile:Control {
   int titleY=(int)(frame.Bottom+10*s);
   TextRenderer.DrawText(g,Profile.Name,Font,new Rectangle((int)(4*s),titleY,Width-(int)(8*s),(int)(38*s)),Color.FromArgb(233,235,244),TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.WordBreak|TextFormatFlags.NoPrefix);
   using(var font=new Font(Font.FontFamily,8)){
-   string badge=L.T(PackDownloads.Available(Profile)?"데이터 다운로드":EventPacks.Dedicated(Profile)?"듀얼센스 지원":"글로벌 적용");
+   string badge=L.T(PackDownloads.Supported(Profile)?"듀얼센스 지원":"글로벌 적용");
    int w=Math.Min(Width-(int)(12*s),TextRenderer.MeasureText(g,badge,font).Width+(int)(18*s));var badgeBox=new Rectangle((Width-w)/2,Height-(int)(25*s),w,(int)(20*s));
    using(var path=UiShape.Round(badgeBox,10*s))using(var brush=new SolidBrush(Profile.HasEffects?Color.FromArgb(30,53,53):Color.FromArgb(29,33,46)))g.FillPath(brush,path);
    TextRenderer.DrawText(g,badge,font,badgeBox,Profile.HasEffects?Color.FromArgb(123,219,190):Color.FromArgb(153,162,184),TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis);

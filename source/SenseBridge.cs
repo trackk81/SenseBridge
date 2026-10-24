@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -136,7 +136,7 @@ public sealed class MainForm:Form {
   var games=NavButton(L.T("게임"),80);((RoundedButton)games).SelectedStyle=true;games.Click+=delegate{library.Focus();};
   add=NavButton("+",48);add.Font=new Font("Segoe UI",21);add.AccessibleName=L.T("게임 추가");navTips.SetToolTip(add,L.T("게임 추가"));
   add.Click+=delegate{var menu=NavMenu();menu.Items.Add(L.T("+ 게임 추가"),null,delegate{AddGame();});menu.Items.Add(L.T("Steam 게임 목록 추가"),null,delegate{ImportSteamGames();});menu.Show(add,new Point(0,add.Height+8));};
-  var data=NavButton(L.T("데이터 ▾"),104);data.Click+=delegate{var menu=NavMenu();menu.Items.Add(L.T("게임 데이터 자료실"),null,delegate{Process.Start(new ProcessStartInfo(GameDataCatalog.LibraryUrl){UseShellExecute=true});});var export=menu.Items.Add(L.T("데이터 내보내기"),null,delegate{ExportPreset();});export.Enabled=selected!=null;menu.Items.Add(L.T("데이터 불러오기"),null,delegate{ImportPreset();});menu.Show(data,new Point(0,data.Height+8));};
+  var data=NavButton(L.T("데이터 ▾"),104);data.Click+=delegate{var menu=NavMenu();var export=menu.Items.Add(L.T("데이터 내보내기"),null,delegate{ExportPreset();});export.Enabled=selected!=null;menu.Items.Add(L.T("데이터 불러오기"),null,delegate{ImportPreset();});menu.Show(data,new Point(0,data.Height+8));};
   var guide=NavButton("?",44);guide.Font=new Font("Segoe UI",16);guide.AccessibleName=L.T("프리셋 제작 매뉴얼");navTips.SetToolTip(guide,L.T("프리셋 제작 매뉴얼"));guide.Click+=delegate{try{string path=Path.Combine(Store.Root,"PRESET-GUIDE.ko.html");if(!File.Exists(path))throw new FileNotFoundException(L.T("매뉴얼 파일이 없습니다."));Process.Start(new ProcessStartInfo(path){UseShellExecute=true});}catch(Exception ex){Error(ex);}};
   settings=NavButton("⚙",44);settings.Font=new Font("Segoe UI Symbol",16);settings.AccessibleName=L.T("프로그램 설정");navTips.SetToolTip(settings,L.T("프로그램 설정"));settings.Click+=delegate{OpenSettings();};
   updateButton=NavButton(L.T("업데이트"),90);updateButton.Enabled=false;updateButton.Click+=delegate{InstallUpdate();};navTips.SetToolTip(updateButton,L.T("업데이트 확인 중"));
@@ -172,7 +172,7 @@ public sealed class MainForm:Form {
   int top=(int)(100*scale),margin=(int)(16*scale);library.SetBounds(margin,top,Math.Max(0,ClientSize.Width-2*margin),Math.Max(0,ClientSize.Height-top-margin));
  }
  CheckBox Option(string label,int x,int y){var c=new CheckBox{Text=label,Bounds=new Rectangle(x,y,334,34),ForeColor=fg};Controls.Add(c);return c;}
- Button DetailsButton(int y,bool speaker){var b=new RoundedButton{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,y,114,28),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Malgun Gothic",9)};b.Click+=delegate{using(Form f=EventPacks.Is(selected)?(Form)new EventDetailsForm(selected,speaker):Store.Supported(selected)?(Form)new AudioDetailsForm(speaker):new GenericForm(GlobalConfig(selected))){f.ShowDialog(profileDialog??this);}};Controls.Add(b);return b;}
+ Button DetailsButton(int y,bool speaker){var b=new RoundedButton{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,y,114,28),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Malgun Gothic",9)};b.Click+=delegate{using(Form f=Ac6Support.Is(selected)?(Form)new Ac6AudioForm(speaker):EventPacks.Is(selected)?(Form)new EventDetailsForm(selected,speaker):Store.Supported(selected)?(Form)new AudioDetailsForm(speaker):new GenericForm(GlobalConfig(selected))){f.ShowDialog(profileDialog??this);}};Controls.Add(b);return b;}
  void ShowGameOptions(){
   if(busy||selected==null||profileDialog!=null)return;
   var controls=new Control[]{triggers,haptics,audio,hapticDetails,speakerDetails,choose,debug,profileInfo};
@@ -182,6 +182,10 @@ public sealed class MainForm:Form {
    Rectangle[] bounds={new Rectangle(24,26,300,36),new Rectangle(24,82,300,36),new Rectangle(24,138,300,36),new Rectangle(350,84,126,32),new Rectangle(350,140,126,32),new Rectangle(24,212,210,34),new Rectangle(280,212,196,34),new Rectangle(24,180,452,28)};
    for(int i=0;i<controls.Length;i++){f.Controls.Add(controls[i]);var r=bounds[i];controls[i].Bounds=new Rectangle((int)(r.X*scale),(int)(r.Y*scale),(int)(r.Width*scale),(int)(r.Height*scale));}
    var close=new RoundedButton{Text=L.T("닫기"),BackColor=bg,ForeColor=fg,FlatStyle=FlatStyle.Flat,Bounds=new Rectangle((int)(350*scale),(int)(270*scale),(int)(126*scale),(int)(32*scale)),DialogResult=DialogResult.OK};f.Controls.Add(close);f.CancelButton=close;
+   if(selected.SteamAppId=="1888160"||string.Equals(Path.GetFileName(selected.EngineExecutable??selected.Executable),"armoredcore6.exe",StringComparison.OrdinalIgnoreCase)){
+    var triggerDetails=new RoundedButton{Text=L.T("상세 옵션"),BackColor=bg,ForeColor=fg,FlatStyle=FlatStyle.Flat,Bounds=new Rectangle((int)(350*scale),(int)(28*scale),(int)(126*scale),(int)(32*scale))};
+    triggerDetails.Click+=delegate{using(var details=new Ac6TriggerForm())details.ShowDialog(f);};f.Controls.Add(triggerDetails);
+   }
    UpdateLayout();try{f.ShowDialog(this);}finally{profileDialog=null;foreach(var c in controls){c.Visible=false;Controls.Add(c);}UpdateLayout();}
   }
  }
@@ -206,7 +210,7 @@ public sealed class MainForm:Form {
    var updated=await Task.Run(()=>Presets.Import(Store.Root,games,preset));
    library.Items.Clear();foreach(var game in updated)library.Items.Add(game);
    library.SelectedItem=Presets.Find(updated,preset);profileRevision++;observedPid=-1;connectedKey=null;library.RefreshCards();SelectGame();
-   if(selected!=null&&(SteamLibrary.Ready(selected)||!string.IsNullOrEmpty(selected.EngineExecutable))){
+   if(selected!=null&&EventPacks.Is(selected)&&(SteamLibrary.Ready(selected)||!string.IsNullOrEmpty(selected.EngineExecutable))){
     try{await Task.Run(()=>EventPacks.Install(Store.Root,selected));}
     catch(Exception ex){MessageBox.Show(profileDialog??this,L.T("데이터 다운로드 완료. 게임을 종료한 뒤 실행 파일을 지정해 연결하세요.")+"\n\n"+ex.Message,"SenseBridge");}
    }
@@ -308,7 +312,7 @@ public sealed class MainForm:Form {
   }
  }
  void ExitApp(){exitRequested=true;Close();}
- void StopEffects(){EventPacks.Stop();GenericEngine.Stop();Store.Disable();connectedKey=null;}
+ void StopEffects(){Ac6Support.Stop();EventPacks.Stop();GenericEngine.Stop();Store.Disable();connectedKey=null;}
  void UseGame(){
   if(busy)return;
   try{if(active){watch.Stop();StopEffects();active=false;use.Text=L.T("자동 적용 시작");status.Text=L.T("자동 적용 꺼짐");}
@@ -319,7 +323,7 @@ public sealed class MainForm:Form {
   int foreground=ProfileRouter.ForegroundPid();
   if(foreground!=observedPid)retryAfter=DateTime.MinValue;
   if(DateTime.UtcNow<retryAfter)return;
-  if(foreground==observedPid&&observedRevision==profileRevision&&(connectedKey==null||!connectedGeneric||GenericEngine.Running||EventPacks.Running))return;
+  if(foreground==observedPid&&observedRevision==profileRevision&&(connectedKey==null||!connectedGeneric||GenericEngine.Running||EventPacks.Running||Ac6Runtime.Running))return;
   observedPid=foreground;observedRevision=profileRevision;
   status.Visible=false;
   busy=true; // Re-entry guard only: polling must not toggle UI enabled states.
@@ -330,7 +334,8 @@ public sealed class MainForm:Form {
    var profile=session.Profile;var game=session.Process;string key=session.Key;
    string signature=key+":"+profile.UseTriggers+":"+profile.UseHaptics+":"+profile.UseSpeaker;
    if(signature!=connectedKey){StopEffects();ApplyOptions(profile);}
-   if(EventPacks.Is(profile)){if(!EventPacks.Running)await Task.Run(()=>EventPacks.Start(profile,game));}
+   if(Ac6Support.Is(profile)){await Task.Run(()=>Ac6Runtime.Ensure(game));Ac6Support.Apply(profile);}
+   else if(EventPacks.Is(profile)){if(!EventPacks.Running)await Task.Run(()=>EventPacks.Start(profile,game));}
    else if(!Store.Supported(profile)){
     if(!GenericEngine.Running){GenericEngine.Config=GlobalConfig(profile);status.Text=L.T("글로벌 엔진 연결 중");await Task.Run(()=>GenericEngine.Start());}
    }else if(!attached.Contains(key)){
@@ -344,6 +349,7 @@ public sealed class MainForm:Form {
   finally{if(session!=null)session.Dispose();busy=false;if(!IsDisposed&&exitRequested)Close();}
  }
  void ApplyOptions(GameProfile profile){
+   if(Ac6Support.Is(profile)){Ac6Support.Apply(profile);return;}
    if(EventPacks.Is(profile)){EventPacks.Apply(profile);return;}
    if(!Store.Supported(profile)){
     var path=GlobalConfig(profile);var v=Store.ReadIni(path);v["triggers"]=profile.UseTriggers?"1":"0";v["haptics"]=profile.UseHaptics?"1":"0";
@@ -371,10 +377,11 @@ public sealed class MainForm:Form {
 static class Program {
  [STAThread] static void Main(string[] args){
   if(args.Contains("--self-test")){SelfTest();return;}
+  if(args.Contains("--prepare-runtime")){RuntimeBundle.Ensure(Store.Root);return;}
   bool created;using(var mutex=new Mutex(true,"Local\\SenseBridge.Desktop",out created)){
    if(!created){MessageBox.Show(L.T("SenseBridge가 이미 실행 중입니다. 작업 표시줄 트레이에서 열어 주세요."),"SenseBridge");return;}
    Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
-   try{Application.Run(new MainForm());}catch(Exception ex){File.WriteAllText(Path.Combine(Store.Root,"error.log"),ex.ToString());MessageBox.Show(ex.Message,L.T("SenseBridge 실행 오류"));}
+   try{RuntimeBundle.Ensure(Store.Root);Application.Run(new MainForm());}catch(Exception ex){File.WriteAllText(Path.Combine(Store.Root,"error.log"),ex.ToString());MessageBox.Show(ex.Message,L.T("SenseBridge 실행 오류"));}
   }
  }
  static void SelfTest(){string dir=Path.Combine(Path.GetTempPath(),"sensebridge-test-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);try{string p=Path.Combine(dir,"config.ini");Store.Atomic(p,"enabled=1\nfire_percent=55\nfuture_option=keep\n");var d=Store.ReadIni(p);d["enabled"]="0";Store.WriteIni(p,d);var r=Store.ReadIni(p);if(r["future_option"]!="keep"||r["enabled"]!="0"||Store.Number(r,"fire_percent",1,35,85)!=55)throw new Exception("Config roundtrip failed");r["fire_percent"]="1000";if(Store.Number(r,"fire_percent",55,35,85)!=85)throw new Exception("Clamp failed");if(Store.Supported(new GameProfile{Adapter="pending"}))throw new Exception("Unimplemented adapter enabled");var list=new List<GameProfile>{new GameProfile{Id="test",Name=L.T("테스트 게임"),Executable=@"C:\Game Folder\game.exe",Adapter="pending"}};var round=Store.Json.Deserialize<List<GameProfile>>(Store.Json.Serialize(list));if(round[0].Name!=list[0].Name||round[0].Executable!=list[0].Executable)throw new Exception("Profile roundtrip failed");File.WriteAllText(Path.Combine(Store.Root,"self-test.txt"),"PASS: atomic settings/preservation, bounds, unsupported adapter guard, Korean profile roundtrip");}finally{Directory.Delete(dir,true);}}
