@@ -86,7 +86,7 @@ public class TriggerDiagram:Control {
 public sealed class MainForm:Form {
  readonly Color bg=Color.FromArgb(15,18,27),fg=Color.FromArgb(235,238,249);
  Button updateButton; UpdateManifest availableUpdate; bool checkingUpdate; readonly System.Windows.Forms.Timer updateTimer=new System.Windows.Forms.Timer{Interval=21600000};
- GameGallery library; Form profileDialog; CheckBox triggers,haptics,audio; Button use,debug,choose,quit,hapticDetails,speakerDetails,add,settings; NavigationBar navigation; Label brand; ToolTip navTips=new ToolTip(); NotifyIcon tray; Label status,profileInfo;
+ GameGallery library; Form profileDialog; CheckBox triggers,haptics,audio; Button use,debug,choose,quit,hapticDetails,speakerDetails,triggerDetails,add,settings; NavigationBar navigation; Label brand; ToolTip navTips=new ToolTip(); NotifyIcon tray; Label status,profileInfo;
  readonly System.Windows.Forms.Timer watch=new System.Windows.Forms.Timer{Interval=100};
  GameProfile selected; bool busy,active,exitRequested,loadingProfile,connectedGeneric; string connectedKey,blockedKey; readonly HashSet<string> attached=new HashSet<string>(); DateTime retryAfter; int observedPid=-1,profileRevision,observedRevision=-1;
  public MainForm():this(true){}
@@ -103,6 +103,7 @@ public sealed class MainForm:Form {
   haptics=Option(L.T("오디오 햅틱"),260,91);
   audio=Option(L.T("스피커 사용"),260,144);
   haptics.Width=200;audio.Width=200;
+  triggerDetails=new RoundedButton{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,41,114,28),ForeColor=fg,BackColor=bg};triggerDetails.Click+=delegate{using(var f=new TriggerDetailsForm()){f.ShowDialog(profileDialog??this);}};Controls.Add(triggerDetails);
   hapticDetails=DetailsButton(94,false);speakerDetails=DetailsButton(147,true);
   use=new RoundedButton{Text=L.T("자동 적용 시작"),Bounds=new Rectangle(20,576,780,42),Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,FlatStyle=FlatStyle.Flat,BackColor=Color.FromArgb(116,96,221),ForeColor=fg,Cursor=Cursors.Hand};
   use.FlatAppearance.BorderSize=0;use.Click+=delegate{UseGame();};Controls.Add(use);
@@ -174,12 +175,15 @@ public sealed class MainForm:Form {
  Button DetailsButton(int y,bool speaker){var b=new RoundedButton{Text=L.T("상세 옵션"),Bounds=new Rectangle(480,y,114,28),FlatStyle=FlatStyle.Flat,ForeColor=fg,BackColor=bg,Font=new Font("Malgun Gothic",9)};b.Click+=delegate{using(Form f=EventPacks.Is(selected)?(Form)new EventDetailsForm(selected,speaker):Store.Supported(selected)?(Form)new AudioDetailsForm(speaker):new GenericForm(GlobalConfig(selected))){f.ShowDialog(profileDialog??this);}};Controls.Add(b);return b;}
  void ShowGameOptions(){
   if(busy||selected==null||profileDialog!=null)return;
-  var controls=new Control[]{triggers,haptics,audio,hapticDetails,speakerDetails,choose,debug,profileInfo};
+  var layout=new Dictionary<Control,Rectangle>{
+   {triggers,new Rectangle(24,26,300,36)},{haptics,new Rectangle(24,82,300,36)},{audio,new Rectangle(24,138,300,36)},
+   {triggerDetails,new Rectangle(350,28,126,32)},{hapticDetails,new Rectangle(350,84,126,32)},{speakerDetails,new Rectangle(350,140,126,32)},
+   {choose,new Rectangle(24,212,210,34)},{debug,new Rectangle(280,212,196,34)},{profileInfo,new Rectangle(24,180,452,28)}};
+  var controls=layout.Keys.ToArray();
   using(var f=new Form{Text=selected.Name,ClientSize=new Size(500,320),BackColor=bg,ForeColor=fg,Font=Font,StartPosition=FormStartPosition.CenterParent,FormBorderStyle=FormBorderStyle.FixedDialog,MaximizeBox=false,MinimizeBox=false,AutoScaleMode=AutoScaleMode.None,Icon=Icon}){
    profileDialog=f;float scale;using(var g=CreateGraphics())scale=g.DpiX/96f;
    f.ClientSize=new Size((int)(500*scale),(int)(320*scale));
-   Rectangle[] bounds={new Rectangle(24,26,300,36),new Rectangle(24,82,300,36),new Rectangle(24,138,300,36),new Rectangle(350,84,126,32),new Rectangle(350,140,126,32),new Rectangle(24,212,210,34),new Rectangle(280,212,196,34),new Rectangle(24,180,452,28)};
-   for(int i=0;i<controls.Length;i++){f.Controls.Add(controls[i]);var r=bounds[i];controls[i].Bounds=new Rectangle((int)(r.X*scale),(int)(r.Y*scale),(int)(r.Width*scale),(int)(r.Height*scale));}
+   foreach(var entry in layout){var c=entry.Key;var r=entry.Value;f.Controls.Add(c);c.Bounds=new Rectangle((int)(r.X*scale),(int)(r.Y*scale),(int)(r.Width*scale),(int)(r.Height*scale));}
    var close=new RoundedButton{Text=L.T("닫기"),BackColor=bg,ForeColor=fg,FlatStyle=FlatStyle.Flat,Bounds=new Rectangle((int)(350*scale),(int)(270*scale),(int)(126*scale),(int)(32*scale)),DialogResult=DialogResult.OK};f.Controls.Add(close);f.CancelButton=close;
    UpdateLayout();try{f.ShowDialog(this);}finally{profileDialog=null;foreach(var c in controls){c.Visible=false;Controls.Add(c);}UpdateLayout();}
   }
@@ -270,7 +274,7 @@ public sealed class MainForm:Form {
  bool Configured(){return Configured(selected);}
  void UpdateLayout(){
   bool download=PackDownloads.Available(selected);bool configured=profileDialog!=null&&Configured()&&!download,bb=Store.Supported(selected);triggers.Visible=haptics.Visible=configured;use.Visible=true;
-  audio.Visible=speakerDetails.Visible=configured&&EventPacks.Dedicated(selected);debug.Visible=BuildFeatures.DebugTools&&configured&&bb&&AppPreferences.Current.DebugButton;hapticDetails.Visible=configured;
+  audio.Visible=speakerDetails.Visible=configured&&EventPacks.Dedicated(selected);debug.Visible=BuildFeatures.DebugTools&&configured&&bb&&AppPreferences.Current.DebugButton;hapticDetails.Visible=configured;triggerDetails.Visible=configured&&bb;
   choose.Visible=profileDialog!=null&&selected!=null;
   choose.Text=download?L.T("데이터 다운로드"):Configured()?L.T("실행 파일 변경"):L.T("실행 파일 지정");
   choose.Enabled=!busy;

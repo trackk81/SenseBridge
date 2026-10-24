@@ -149,5 +149,10 @@
   "업데이트 확인 중": "Checking for updates",
   "최신 버전입니다.": "Up to date.",
   "새 버전: ": "New version: ",
-  "업데이트 확인 실패 · 나중에 다시 확인합니다.": "Update check failed. Will retry later."
+  "업데이트 확인 실패 · 나중에 다시 확인합니다.": "Update check failed. Will retry later.",
+  "트리거 상세 옵션": "Trigger details",
+  "저항 강도": "Resistance strength",
+  "0 = 저항 끄기 · 최대 80 · 기본 50": "0 = resistance off · maximum 80 · default 50",
+  "게임의 공격 입력 시점은 변경하지 않습니다.": "Game attack input timing is unchanged.",
+  "기본값": "Defaults"
 }

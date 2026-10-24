@@ -1,4 +1,4 @@
-using System;using System.Drawing;using System.Drawing.Drawing2D;using System.Windows.Forms;
+﻿using System;using System.Drawing;using System.Drawing.Drawing2D;using System.Windows.Forms;
 namespace SenseBridge {
 static class UiShape {
  public static GraphicsPath Round(RectangleF r,float radius){var p=new GraphicsPath();float d=Math.Min(radius*2,Math.Min(r.Width,r.Height));p.AddArc(r.X,r.Y,d,d,180,90);p.AddArc(r.Right-d,r.Y,d,d,270,90);p.AddArc(r.Right-d,r.Bottom-d,d,d,0,90);p.AddArc(r.X,r.Bottom-d,d,d,90,90);p.CloseFigure();return p;}
@@ -30,5 +30,14 @@ public sealed class NavigationColors:ProfessionalColorTable {
  public override Color ImageMarginGradientBegin{get{return ToolStripDropDownBackground;}}
  public override Color ImageMarginGradientMiddle{get{return ToolStripDropDownBackground;}}
  public override Color ImageMarginGradientEnd{get{return ToolStripDropDownBackground;}}
+}
+}
+
+namespace SenseBridge {
+public sealed class ValueSlider:System.Windows.Forms.UserControl {
+ readonly TrackBar bar=new TrackBar();readonly Label limits=new Label();int scale;int decimals;string suffix;
+ public decimal Value {get{return (decimal)bar.Value/scale;}set{bar.Value=Math.Max(bar.Minimum,Math.Min(bar.Maximum,(int)Math.Round(value*scale)));}}
+ public ValueSlider(decimal max,decimal value,int places,string unit){scale=places==2?100:1;decimals=places;suffix=unit;Height=62;MinimumSize=new Size(100,62);bar.Dock=DockStyle.Top;bar.Height=34;bar.AutoSize=false;bar.Minimum=0;bar.Maximum=(int)(max*scale);bar.SmallChange=places==2?25:1;bar.LargeChange=places==2?50:5;bar.TickStyle=TickStyle.None;bar.AccessibleName="Value (0 - "+max+unit+")";limits.Dock=DockStyle.Bottom;limits.Height=24;limits.TextAlign=ContentAlignment.MiddleCenter;Controls.Add(bar);Controls.Add(limits);bar.ValueChanged+=delegate{UpdateText();};Value=value;UpdateText();}
+ void UpdateText(){string format=decimals==2?"0.00":"0";limits.Text="0"+suffix+"   /   "+Value.ToString(format)+suffix+"   /   "+((decimal)bar.Maximum/scale).ToString(format)+suffix;bar.AccessibleDescription=limits.Text;}
 }
 }
